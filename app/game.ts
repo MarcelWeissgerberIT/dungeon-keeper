@@ -410,6 +410,27 @@ function nearest(
 function effect(s: GameState, t: Tile, type: Effect['type']) {
   s.effects.push({ x: t.x, z: t.z, type, life: 1 });
 }
+/** Shared by single-tile building and the area-plan preview; excludes price. */
+export function roomBuildProblem(
+  s: GameState,
+  room: Room,
+  i: number,
+): string | null {
+  const t = s.tiles[i];
+  if (s.status !== 'playing') return 'Diese Expedition ist beendet.';
+  if (
+    !t ||
+    !walkable(t) ||
+    !t.owned ||
+    t.kind === 'core' ||
+    t.kind === 'portal'
+  )
+    return 'Wähle freigelegten Boden, den deine Schürflinge beansprucht haben.';
+  if (t.room || t.trap || t.door) return 'Dieses Feld ist bereits bebaut.';
+  if (room === 'forge' && !s.unlocked)
+    return 'Die Werkstatt benötigt abgeschlossene Forschung.';
+  return null;
+}
 export function applyTool(
   s: GameState,
   tool: Tool,
@@ -517,13 +538,8 @@ export function applyTool(
   }
   if (Object.hasOwn(ROOMS, tool)) {
     const r = tool as Room;
-    if (t.room || t.trap || t.door)
-      return { ok: false, message: 'Dieses Feld ist bereits bebaut.' };
-    if (r === 'forge' && !s.unlocked)
-      return {
-        ok: false,
-        message: 'Die Werkstatt benötigt abgeschlossene Forschung.',
-      };
+    const problem = roomBuildProblem(s, r, i);
+    if (problem) return { ok: false, message: problem };
     if (s.gold < ROOMS[r].cost)
       return {
         ok: false,

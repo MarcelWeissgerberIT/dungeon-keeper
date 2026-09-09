@@ -6,6 +6,26 @@ import {
 } from 'react';
 export type Locale = 'de' | 'en';
 const messages: Record<string, string> = {
+  Bauplan: 'Construction plan',
+  BAUPLAN: 'CONSTRUCTION PLAN',
+  'FLÄCHE MARKIEREN': 'DESIGNATE AREA',
+  'Bauplan verwerfen': 'Discard construction plan',
+  bebaubar: 'buildable',
+  blockiert: 'blocked',
+  Gold: 'Gold',
+  'Fehlendes Gold:': 'Gold needed:',
+  'Bereich bauen': 'Build area',
+  Verwerfen: 'Discard',
+  'Loslassen, um den Bauplan zu setzen.':
+    'Release to place the construction plan.',
+  'Fläche ziehen · Enter baut · Esc verwirft':
+    'Drag an area · Enter builds · Esc discards',
+  'Nicht genug Gold für den gesamten Bauplan.':
+    'Not enough gold for the entire construction plan.',
+  'Keine bebaubaren Felder ausgewählt.': 'No buildable tiles selected.',
+  'Bauplan errichtet.': 'Construction plan built.',
+  'Diese Expedition ist beendet.': 'This expedition has ended.',
+
   'Dungeon und Bauwerkzeuge': 'Dungeon and building tools',
   'Vollbild umschalten': 'Toggle fullscreen',
   'Eine Spielgrafik konnte nicht geladen werden. Bitte lade das Spiel erneut.':
@@ -313,8 +333,8 @@ const messages: Record<string, string> = {
     'Kluftkrone is an original dungeon strategy game. Your creatures act independently; you shape their world.',
   'Wähle Graben (2) und markiere Erde oder Gold. Ziehen markiert ganze Flächen. Nur erreichbare Flächen werden abgebaut. Schürflinge beanspruchen den Boden danach automatisch.':
     'Choose Excavate (2) and designate earth or gold. Drag to designate areas. Only reachable tiles are excavated. Delvers then claim the ground automatically.',
-  'Wähle einen Raum und klicke auf eigenen, freien Boden. Ziehen baut mehrere Felder. Ruheplätze und mindestens 4 Pilzgarten-Felder ermöglichen neue Bewohner; zwei Ruhefelder bieten einen Platz.':
-    'Select a room and click your claimed empty ground. Drag to build several tiles. Rest spaces and at least 4 fungal-garden tiles allow new creatures to arrive; every two sanctuary tiles provide one place.',
+  'Wähle einen Raum und ziehe eine Fläche auf eigenem, freiem Boden. Grün zeigt bebaubare, Rot blockierte Felder. Prüfe die Goldkosten und baue mit Enter; Escape verwirft den Plan. Ruheplätze und mindestens 4 Pilzgarten-Felder ermöglichen neue Bewohner; zwei Ruhefelder bieten einen Platz.':
+    'Select a room and drag an area on claimed, empty ground. Green tiles are buildable, red tiles are blocked. Check the gold cost and press Enter to build; Escape discards the plan. Rest spaces and at least 4 fungal-garden tiles allow new creatures to arrive; every two sanctuary tiles provide one place.',
   'Bewohner suchen Nahrung und Ruhe selbst. Alle 100 Sekunden ist Zahltag. Schürflinge liefern Gold in die Schatzkammer, deren Felder die Lagerkapazität erhöhen.':
     'Creatures find food and rest themselves. Payday occurs every 100 seconds. Delvers deliver gold to the treasury, whose tiles expand storage capacity.',
   'Training kostet Gold und stärkt Kämpfer. Vier Archivfelder locken einen Runenweber. Seine Forschung erschließt Sturmfunken, Fallen, Pforten und die Werkstatt.':

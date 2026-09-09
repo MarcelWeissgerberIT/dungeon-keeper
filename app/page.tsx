@@ -11,7 +11,6 @@ import {
   ArrowUpRight,
   Axe,
   BookOpen,
-  Box,
   Check,
   ChevronRight,
   CircleHelp,
@@ -44,7 +43,6 @@ import {
   Save,
   Settings2,
   Shield,
-  Skull,
   Sparkles,
   Swords,
   Trash2,
@@ -82,7 +80,6 @@ import {
   applyTool,
   countRoom,
   creatures,
-  army,
   capacity,
   dropUnit,
   serialize,
@@ -94,6 +91,12 @@ import {
   type Room,
 } from './game';
 import { mountScene, type SceneControls } from './scene';
+import {
+  isRoomTool,
+  quoteConstruction,
+  commitConstruction,
+  type ConstructionSelection,
+} from './construction';
 import { registerGameTools } from './webmcp';
 import { translateTree, type Locale } from './i18n';
 const clock = (n: number) =>
@@ -317,8 +320,8 @@ export default function App() {
   }, [locale]);
   const fmt = (n: number) =>
     Math.floor(n).toLocaleString(locale === 'de' ? 'de-DE' : 'en-US');
-  const stateRef = useRef<GameState>(createGame());
-  const [snapshot, setSnapshot] = useState<GameState>(stateRef.current);
+  const [snapshot, setSnapshot] = useState<GameState>(() => createGame());
+  const stateRef = useRef<GameState>(snapshot);
   const [started, setStarted] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [paused, setPaused] = useState(false);
@@ -327,6 +330,16 @@ export default function App() {
   const [tool, setTool] = useState<Tool>('dig');
   const toolRef = useRef<Tool>('dig');
   const [category, setCategory] = useState('rooms');
+  const [construction, setConstruction] =
+    useState<ConstructionSelection | null>(null);
+  const constructionRef = useRef<ConstructionSelection | null>(null);
+  const updateConstruction = useCallback(
+    (next: ConstructionSelection | null) => {
+      constructionRef.current = next;
+      setConstruction(next);
+    },
+    [],
+  );
   const [hovered, setHovered] = useState<number | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [carrying, setCarrying] = useState<number | null>(null);
@@ -392,7 +405,10 @@ export default function App() {
   }, []);
   const changeTool = useCallback(
     (next: Tool) => {
+      updateConstruction(null);
+      sceneRef.current?.cancelDrag();
       setTool(next);
+      if (isRoomTool(next)) setSelected(null);
       toolRef.current = next;
       setCarrying(null);
       carryRef.current = null;
@@ -403,12 +419,17 @@ export default function App() {
         refresh();
       }
     },
-    [notify, refresh, sound],
+    [notify, refresh, sound, updateConstruction],
   );
-  const useTool = useCallback(
+  const applySelection = useCallback(
     (indices: number[]) => {
       if (!indices.length) return;
       const s = stateRef.current;
+      if (isRoomTool(toolRef.current)) {
+        updateConstruction({ room: toolRef.current, indices, dragging: false });
+        sound('click');
+        return;
+      }
       let successes = 0,
         lastMessage = '';
       for (const i of indices) {
@@ -420,8 +441,23 @@ export default function App() {
       if (successes) sound(toolRef.current in ROOMS ? 'build' : 'click');
       refresh();
     },
-    [notify, refresh, sound],
+    [notify, refresh, sound, updateConstruction],
   );
+  const buildConstruction = useCallback(() => {
+    const plan = constructionRef.current;
+    if (!plan || plan.dragging) return;
+    const result = commitConstruction(
+      stateRef.current,
+      plan.room,
+      plan.indices,
+    );
+    notify(result.message);
+    if (result.built) {
+      updateConstruction(null);
+      sound('build');
+    }
+    refresh();
+  }, [notify, refresh, sound, updateConstruction]);
   useEffect(() => {
     try {
       setHasSave(!!localStorage.getItem(SAVE_KEY));
@@ -433,6 +469,16 @@ export default function App() {
       sceneRef.current = mountScene(sceneHost.current, {
         state: () => stateRef.current,
         tool: () => toolRef.current,
+        construction: () => constructionRef.current,
+        onPreview: (indices) => {
+          if (indices === null) updateConstruction(null);
+          else if (isRoomTool(toolRef.current))
+            updateConstruction({
+              room: toolRef.current,
+              indices,
+              dragging: true,
+            });
+        },
         canControl: () =>
           !pauseRef.current && stateRef.current.status === 'playing',
         onSelect: (i, unitId) => {
@@ -466,11 +512,12 @@ export default function App() {
                       : 'Wähle einen Bewohner, um seine Bedürfnisse zu sehen.',
               );
             }
-          } else useTool([i]);
+          } else applySelection([i]);
         },
-        onArea: useTool,
+        onArea: applySelection,
         onHover: setHovered,
         onPossession: (id) => {
+          if (id !== null) updateConstruction(null);
           setPossessed(id);
           possessedRef.current = id;
         },
@@ -486,7 +533,7 @@ export default function App() {
       sceneRef.current = null;
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
-  }, [notify, refresh, useTool]);
+  }, [notify, refresh, applySelection, updateConstruction]);
   useEffect(() => {
     pauseRef.current = !started || paused || help || settings || newGameDialog;
     speedRef.current = speed;
@@ -514,6 +561,8 @@ export default function App() {
         notify('Es wurde kein gültiger Spielstand gefunden.');
         return;
       }
+      updateConstruction(null);
+      sceneRef.current?.cancelDrag();
       stateRef.current = loaded;
       setStarted(true);
       setPaused(false);
@@ -529,13 +578,13 @@ export default function App() {
     } catch {
       notify('Der Spielstand konnte nicht geladen werden.');
     }
-  }, [notify, refresh]);
+  }, [notify, refresh, updateConstruction]);
   useEffect(() => {
     let previous = performance.now(),
       uiElapsed = 0,
       saveElapsed = 0,
       lastWave = 0;
-    let previousEffects = new WeakSet<object>();
+    const previousEffects = new WeakSet<object>();
     const timer = setInterval(() => {
       const now = performance.now(),
         elapsed = Math.min((now - previous) / 1000, 0.2);
@@ -596,8 +645,16 @@ export default function App() {
         if (started) setPaused((p) => !p);
         else setStarted(true);
       }
+      if (e.key === 'Enter' && !e.repeat && constructionRef.current) {
+        e.preventDefault();
+        buildConstruction();
+      }
       if (e.key === 'Escape') {
-        if (possessedRef.current !== null) sceneRef.current?.possess(null);
+        if (constructionRef.current) {
+          updateConstruction(null);
+          sceneRef.current?.cancelDrag();
+        } else if (possessedRef.current !== null)
+          sceneRef.current?.possess(null);
         else changeTool('inspect');
       }
       if (e.key.toLowerCase() === 'f') sceneRef.current?.center();
@@ -616,12 +673,29 @@ export default function App() {
     }
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [started, help, settings, newGameDialog, changeTool, saveGame]);
+  }, [
+    started,
+    help,
+    settings,
+    newGameDialog,
+    changeTool,
+    saveGame,
+    buildConstruction,
+    updateConstruction,
+  ]);
   useEffect(
     () =>
       registerGameTools({
         state: () => stateRef.current,
         act: (t, indices) => {
+          if (isRoomTool(t)) {
+            const result = commitConstruction(stateRef.current, t, indices);
+            refresh();
+            return {
+              ok: result.built,
+              messages: result.built ? [] : [result.message],
+            };
+          }
           let ok = 0;
           const messages: string[] = [];
           for (const i of indices) {
@@ -665,7 +739,6 @@ export default function App() {
   };
   const s = snapshot,
     residents = creatures(s),
-    fighters = army(s),
     selectedUnit = s.units.find((u) => u.id === selected),
     next = Math.max(0, s.nextWave - s.time),
     objective = objectives[s.tutorial],
@@ -676,6 +749,9 @@ export default function App() {
       : category === 'powers'
         ? (['worker', 'heal', 'bolt', 'rally'] as Tool[])
         : (['trap', 'door', 'sell'] as Tool[]);
+  const constructionQuote = construction
+    ? quoteConstruction(s, construction.room, construction.indices)
+    : null;
   const hoverTile = hovered === null ? null : s.tiles[hovered];
   const hoverName = hoverTile
     ? hoverTile.room
@@ -1062,6 +1138,85 @@ export default function App() {
               </button>
             </div>
           )}
+          {construction && constructionQuote && possessed === null && (
+            <aside
+              className={`construction-command ${construction.dragging ? 'is-drawing' : ''}`}
+              aria-label="Bauplan"
+            >
+              <div className="construction-heading">
+                <Layers3 size={21} />
+                <div>
+                  <small>
+                    {construction.dragging ? 'FLÄCHE MARKIEREN' : 'BAUPLAN'}
+                  </small>
+                  <strong>{ROOMS[construction.room].name}</strong>
+                </div>
+                <b className="construction-size">
+                  {constructionQuote.width} × {constructionQuote.depth}
+                </b>
+                <button
+                  className="construction-cancel"
+                  aria-label="Bauplan verwerfen"
+                  onClick={() => {
+                    updateConstruction(null);
+                    sceneRef.current?.cancelDrag();
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="construction-counts" aria-live="polite">
+                <span className="valid">
+                  <i />
+                  {constructionQuote.valid.length} <span>bebaubar</span>
+                </span>
+                {constructionQuote.blocked.length > 0 && (
+                  <span className="blocked">
+                    <i />
+                    {constructionQuote.blocked.length} <span>blockiert</span>
+                  </span>
+                )}
+                <strong
+                  className={constructionQuote.shortfall ? 'gold-missing' : ''}
+                >
+                  <Coins size={15} />
+                  {fmt(constructionQuote.cost)} <span>Gold</span>
+                </strong>
+              </div>
+              {constructionQuote.shortfall > 0 && (
+                <p className="construction-warning">
+                  <span>Fehlendes Gold:</span>{' '}
+                  {fmt(constructionQuote.shortfall)}
+                </p>
+              )}
+              {!constructionQuote.valid.length && constructionQuote.reason && (
+                <p className="construction-warning">
+                  {constructionQuote.reason}
+                </p>
+              )}
+              {construction.dragging ? (
+                <p className="construction-instruction">
+                  Loslassen, um den Bauplan zu setzen.
+                </p>
+              ) : (
+                <div className="construction-actions">
+                  <button
+                    className="construction-build"
+                    disabled={!constructionQuote.canBuild}
+                    onClick={buildConstruction}
+                  >
+                    <Hammer size={16} />
+                    <span>Bereich bauen</span>
+                    <kbd>ENTER</kbd>
+                  </button>
+                  <button onClick={() => updateConstruction(null)}>
+                    <span>Verwerfen</span>
+                    <kbd>ESC</kbd>
+                  </button>
+                </div>
+              )}
+            </aside>
+          )}
           {possessed !== null && (
             <div className="possession-banner">
               <Eye size={18} />
@@ -1123,6 +1278,7 @@ export default function App() {
                 <div className="unit-buttons">
                   <button
                     onClick={() => {
+                      changeTool('inspect');
                       setCarrying(selectedUnit.id);
                       carryRef.current = selectedUnit.id;
                       soundRef.current?.voice(selectedUnit.kind, 'grab');
@@ -1350,7 +1506,10 @@ export default function App() {
                 </button>
               ) : (
                 <span className="drag-hint">
-                  <Move size={13} /> Ziehen für mehrere Felder
+                  <Move size={13} />{' '}
+                  {isRoomTool(tool)
+                    ? 'Fläche ziehen · Enter baut · Esc verwirft'
+                    : 'Ziehen für mehrere Felder'}
                 </span>
               )}
             </div>
@@ -1459,7 +1618,7 @@ export default function App() {
               {
                 icon: Layers3,
                 title: '02 / Errichten',
-                text: 'Wähle einen Raum und klicke auf eigenen, freien Boden. Ziehen baut mehrere Felder. Ruheplätze und mindestens 4 Pilzgarten-Felder ermöglichen neue Bewohner; zwei Ruhefelder bieten einen Platz.',
+                text: 'Wähle einen Raum und ziehe eine Fläche auf eigenem, freiem Boden. Grün zeigt bebaubare, Rot blockierte Felder. Prüfe die Goldkosten und baue mit Enter; Escape verwirft den Plan. Ruheplätze und mindestens 4 Pilzgarten-Felder ermöglichen neue Bewohner; zwei Ruhefelder bieten einen Platz.',
               },
               {
                 icon: Users,

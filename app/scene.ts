@@ -1,5 +1,12 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { createCreatureModels } from './creature-models';
+import {
+  rectangleIndices,
+  quoteConstruction,
+  isRoomTool,
+  type ConstructionSelection,
+} from './construction';
 import {
   SIZE,
   idx,
@@ -19,10 +26,13 @@ export interface SceneControls {
   focus: (x: number, z: number) => void;
   possess: (id: number | null) => void;
   getPossessed: () => number | null;
+  cancelDrag: () => void;
 }
 export interface SceneOptions {
   state: () => GameState;
   tool: () => Tool;
+  construction: () => ConstructionSelection | null;
+  onPreview: (indices: number[] | null) => void;
   canControl: () => boolean;
   onSelect: (i: number, unitId: number | null) => void;
   onArea: (indices: number[]) => void;
@@ -56,8 +66,8 @@ export function mountScene(
   host.appendChild(renderer.domElement);
   const camera = new THREE.OrthographicCamera(-15, 15, 12, -12, 0.1, 150);
   const eye = new THREE.PerspectiveCamera(68, 1, 0.08, 100);
-  let target = new THREE.Vector3(13, 0, 14),
-    angle = Math.PI / 4,
+  const target = new THREE.Vector3(13, 0, 14);
+  let angle = Math.PI / 4,
     elevation = 1.04,
     scale = 13.5,
     possessed: number | null = null,
@@ -280,21 +290,6 @@ export function mountScene(
     dummy.rotation.set(0, rot, 0);
     dummy.updateMatrix();
     buckets.get(key)!.matrices.push(dummy.matrix.clone());
-  }
-  function addProp(
-    g: THREE.BufferGeometry,
-    c: string,
-    x: number,
-    y: number,
-    z: number,
-    sx: number,
-    sy: number,
-    sz: number,
-    rot = 0,
-    emission = 0,
-    metal = 0,
-  ) {
-    add(g, c, x, y, z, sx, sy, sz, rot, emission, metal);
   }
   function seeded(x: number, z: number, k = 0) {
     const n = Math.sin(x * 127.1 + z * 311.7 + k * 73.9) * 43758.5453123;
@@ -680,43 +675,22 @@ export function mountScene(
   const dust = new THREE.Points(dustGeometry, dustMaterial);
   scene.add(dust);
   const unitObjects = new Map<number, THREE.Group>();
+  const creatureModels = createCreatureModels();
   function makeUnit(u: Unit) {
     const g = new THREE.Group();
-    const worker = u.kind === 'worker',
-      brute = u.kind === 'brute',
-      enemy = u.kind === 'invader';
-    const size = brute
-      ? 1.58
-      : worker
-        ? 1.04
-        : u.kind === 'scholar'
-          ? 1.3
-          : 1.34;
-    const col = ['worker', 'guard', 'scholar', 'brute', 'invader'].indexOf(
-      u.kind,
-    );
-    const model = new THREE.Group();
+    const rig = creatureModels.create(u.kind);
+    const model = rig.root;
+    model.traverse((part) => {
+      part.userData.unitId = u.id;
+    });
     g.add(model);
-    contactShadow(0, 0, brute ? 0.42 : 0.26, g);
-    const sprite = illustration(
-      'creatures',
-      5,
-      4,
-      col,
-      0,
-      0,
-      0.07,
-      0,
-      size,
-      size,
-      model,
-    );
+    contactShadow(0, 0, u.kind === 'brute' ? 0.42 : 0.26, g);
     const bar = new THREE.Group();
     const bg = mesh(
       cube,
       '#141d22',
       0,
-      0.16 + 0.88 * size,
+      rig.height + 0.16,
       0,
       0.53,
       0.047,
@@ -726,9 +700,9 @@ export function mountScene(
     bg.castShadow = false;
     const hp = mesh(
       cube,
-      enemy ? '#d97d63' : '#76b69b',
+      u.kind === 'invader' ? '#d97d63' : '#76b69b',
       0,
-      0.16 + 0.88 * size,
+      rig.height + 0.16,
       0.02,
       0.5,
       0.026,
@@ -737,15 +711,19 @@ export function mountScene(
     );
     hp.castShadow = false;
     g.add(bar);
+    g.position.set(u.x, 0, u.z);
     g.userData = {
       model,
-      sprite,
-      col,
-      direction: 0,
+      rig,
+      direction: Math.PI / 4,
+      speed: 0,
+      lastHp: u.hp,
+      hitUntil: 0,
       bar,
       hp,
       previous: new THREE.Vector3(u.x, 0, u.z),
     };
+    model.rotation.y = Math.PI / 4;
     creatures.add(g);
     unitObjects.set(u.id, g);
     return g;
@@ -760,6 +738,52 @@ export function mountScene(
   const marks = new THREE.InstancedMesh(markerGeo, markerMaterial, SIZE * SIZE);
   marks.count = 0;
   scene.add(marks);
+  const planMaterial = new THREE.MeshBasicMaterial({
+    vertexColors: false,
+    transparent: true,
+    opacity: 0.25,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  const planTiles = new THREE.InstancedMesh(
+    markerGeo,
+    planMaterial,
+    SIZE * SIZE,
+  );
+  planTiles.count = 0;
+  planTiles.frustumCulled = false;
+  planTiles.renderOrder = 3;
+  scene.add(planTiles);
+  const planLineGeometry = new THREE.BufferGeometry();
+  const planLinePositions = new Float32Array(SIZE * SIZE * 12 * 3);
+  const planLineColors = new Float32Array(planLinePositions.length);
+  planLineGeometry.setAttribute(
+    'position',
+    new THREE.BufferAttribute(planLinePositions, 3).setUsage(
+      THREE.DynamicDrawUsage,
+    ),
+  );
+  planLineGeometry.setAttribute(
+    'color',
+    new THREE.BufferAttribute(planLineColors, 3).setUsage(
+      THREE.DynamicDrawUsage,
+    ),
+  );
+  planLineGeometry.setDrawRange(0, 0);
+  const planLineMaterial = new THREE.LineBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.95,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  const planLines = new THREE.LineSegments(planLineGeometry, planLineMaterial);
+  planLines.frustumCulled = false;
+  planLines.renderOrder = 4;
+  scene.add(planLines);
+  const validPlanColor = new THREE.Color('#60e4ad'),
+    invalidPlanColor = new THREE.Color('#ed7666'),
+    expensivePlanColor = new THREE.Color('#eebc69');
   const hover = new THREE.Mesh(
     new THREE.BoxGeometry(1.01, 0.04, 1.01),
     new THREE.MeshBasicMaterial({
@@ -843,16 +867,11 @@ export function mountScene(
     return inBounds(x, z) ? idx(x, z) : null;
   }
   function area() {
-    if (dragStart === null || dragEnd === null) return [];
-    const ax = dragStart % SIZE,
-      az = Math.floor(dragStart / SIZE),
-      bx = dragEnd % SIZE,
-      bz = Math.floor(dragEnd / SIZE);
-    const result = [];
-    for (let z = Math.min(az, bz); z <= Math.max(az, bz); z++)
-      for (let x = Math.min(ax, bx); x <= Math.max(ax, bx); x++)
-        result.push(idx(x, z));
-    return result;
+    return rectangleIndices(dragStart, dragEnd);
+  }
+  function cancelDrag() {
+    dragStart = dragEnd = null;
+    dragMoved = false;
   }
   function onDown(e: PointerEvent) {
     renderer.domElement.focus();
@@ -867,6 +886,8 @@ export function mountScene(
     dragStart = pick(e);
     dragEnd = dragStart;
     dragMoved = false;
+    if (isRoomTool(options.tool()) && dragStart !== null)
+      options.onPreview(area());
     renderer.domElement.setPointerCapture(e.pointerId);
     lastX = e.clientX;
     lastY = e.clientY;
@@ -896,7 +917,10 @@ export function mountScene(
       options.onHover(p);
     }
     if (dragStart !== null) {
-      dragEnd = p;
+      if (p !== null && dragEnd !== p) {
+        dragEnd = p;
+        if (isRoomTool(options.tool())) options.onPreview(area());
+      }
       dragMoved ||= Math.hypot(e.clientX - lastX, e.clientY - lastY) > 5;
     }
   }
@@ -908,13 +932,12 @@ export function mountScene(
     const end = pick(e),
       tool = options.tool();
     if (tool === 'inspect' && dragStart !== null && !dragMoved) {
-      const candidates: THREE.Sprite[] = [];
-      for (const [id, group] of unitObjects) {
+      const candidates: THREE.Object3D[] = [];
+      for (const group of unitObjects.values()) {
         if (!group.visible) continue;
-        group.userData.sprite.userData.unitId = id;
-        candidates.push(group.userData.sprite);
+        candidates.push(group.userData.model);
       }
-      const hit = raycaster.intersectObjects(candidates, false)[0];
+      const hit = raycaster.intersectObjects(candidates, true)[0];
       const wall = hit ? raycaster.intersectObject(terrain, true)[0] : null;
       if (hit && (!wall || hit.distance < wall.distance + 0.05)) {
         const unit = options
@@ -931,6 +954,7 @@ export function mountScene(
       }
     }
     if (end !== null && dragStart !== null) {
+      dragEnd = end;
       if (
         dragMoved &&
         tool !== 'inspect' &&
@@ -952,12 +976,14 @@ export function mountScene(
         options.onSelect(end, u?.id ?? null);
       }
     }
-    dragStart = null;
-    dragEnd = null;
+    if (end === null && isRoomTool(tool)) options.onPreview(null);
+    cancelDrag();
+    if (renderer.domElement.hasPointerCapture(e.pointerId))
+      renderer.domElement.releasePointerCapture(e.pointerId);
   }
   function onWheel(e: WheelEvent) {
     e.preventDefault();
-    scale = Math.max(9, Math.min(35, scale + Math.sign(e.deltaY) * 1.1));
+    scale = Math.max(7, Math.min(35, scale + Math.sign(e.deltaY) * 1.1));
     resize();
   }
   function onContext(e: Event) {
@@ -970,6 +996,7 @@ export function mountScene(
       )
     )
       return;
+    if (e.key === 'Escape') cancelDrag();
     if (
       [
         'ArrowUp',
@@ -995,7 +1022,9 @@ export function mountScene(
   function blur() {
     keys.clear();
     rightDown = false;
-    dragStart = null;
+    if (dragStart !== null && isRoomTool(options.tool()))
+      options.onPreview(null);
+    cancelDrag();
   }
   const el = renderer.domElement;
   el.addEventListener('pointerdown', onDown);
@@ -1113,26 +1142,52 @@ export function mountScene(
     for (const u of s.units) {
       const g = unitObjects.get(u.id) ?? makeUnit(u);
       g.visible = u.id !== possessed;
-      g.position.set(u.x, 0, u.z);
       const prev = g.userData.previous as THREE.Vector3;
-      const moving = Math.hypot(u.x - prev.x, u.z - prev.z) > 0.002;
-      if (moving) g.userData.direction = Math.atan2(u.x - prev.x, u.z - prev.z);
-      g.userData.model.position.y = moving
-        ? Math.abs(Math.sin(time * 9 + u.id)) * 0.035
-        : Math.sin(time * 2 + u.id) * 0.008;
-      const relative =
-        g.userData.direction - (possessed === null ? angle : lookAngle);
-      const view = ((Math.round(relative / (Math.PI / 2)) % 4) + 4) % 4;
-      g.userData.sprite.material = atlasMaterial(
-        'creatures',
-        5,
-        4,
-        g.userData.col,
-        view,
+      const distance = Math.hypot(u.x - prev.x, u.z - prev.z);
+      if (distance > 0.002)
+        g.userData.direction = Math.atan2(u.x - prev.x, u.z - prev.z);
+      else if (
+        u.target !== null &&
+        /Gräbt|Baut Gold|Kampf|Trainiert|Schmiedet/.test(u.state)
+      ) {
+        const destination = s.tiles[u.target];
+        if (
+          destination &&
+          Math.hypot(destination.x - u.x, destination.z - u.z) > 0.1
+        )
+          g.userData.direction = Math.atan2(
+            destination.x - u.x,
+            destination.z - u.z,
+          );
+      }
+      if (distance > 2) g.position.set(u.x, 0, u.z);
+      else {
+        g.position.x = THREE.MathUtils.damp(g.position.x, u.x, 24, dt);
+        g.position.z = THREE.MathUtils.damp(g.position.z, u.z, 24, dt);
+      }
+      g.userData.speed = THREE.MathUtils.damp(
+        g.userData.speed,
+        Math.min(6, distance / Math.max(dt, 0.001)),
+        10,
+        dt,
       );
-      g.userData.model.rotation.z = moving
-        ? Math.sin(time * 9 + u.id) * 0.025
-        : 0;
+      const yaw = g.userData.model.rotation.y;
+      const turn = Math.atan2(
+        Math.sin(g.userData.direction - yaw),
+        Math.cos(g.userData.direction - yaw),
+      );
+      g.userData.model.rotation.y += turn * (1 - Math.exp(-dt * 13));
+      g.userData.rig.animate(
+        s.time + u.id * 0.73,
+        g.userData.speed,
+        u.state,
+        u.hp / u.maxHp,
+      );
+      if (u.hp < g.userData.lastHp) g.userData.hitUntil = time + 0.3;
+      g.userData.lastHp = u.hp;
+      const recoil = Math.max(0, g.userData.hitUntil - time) / 0.3;
+      g.userData.model.rotation.z =
+        Math.sin(recoil * Math.PI * 3) * recoil * 0.12;
       g.userData.bar.rotation.copy(
         (possessed === null ? camera : eye).rotation,
       );
@@ -1141,7 +1196,7 @@ export function mountScene(
       prev.set(u.x, 0, u.z);
     }
     let count = 0;
-    const selected = new Set(area());
+    const selected = new Set(isRoomTool(options.tool()) ? [] : area());
     for (const t of s.tiles) {
       if (t.marked || selected.has(idx(t.x, t.z))) {
         dummy.position.set(t.x, walkable(t) ? 0.15 : 1.42, t.z);
@@ -1153,7 +1208,71 @@ export function mountScene(
     }
     marks.count = count;
     marks.instanceMatrix.needsUpdate = true;
-    hover.visible = hovered !== null && possessed === null;
+    const plan = options.construction();
+    const quote = plan ? quoteConstruction(s, plan.room, plan.indices) : null;
+    let planCount = 0,
+      lineVertex = 0;
+    if (quote && possessed === null) {
+      const valid = new Set(quote.valid);
+      const line = (
+        ax: number,
+        ay: number,
+        az: number,
+        bx: number,
+        by: number,
+        bz: number,
+        color: THREE.Color,
+      ) => {
+        for (const v of [
+          [ax, ay, az],
+          [bx, by, bz],
+        ]) {
+          planLinePositions.set(v, lineVertex * 3);
+          planLineColors.set([color.r, color.g, color.b], lineVertex * 3);
+          lineVertex++;
+        }
+      };
+      for (const i of quote.selected) {
+        const t = s.tiles[i],
+          y = walkable(t) ? 0.12 : 1.48;
+        const color = valid.has(i)
+          ? quote.shortfall
+            ? expensivePlanColor
+            : validPlanColor
+          : invalidPlanColor;
+        dummy.position.set(t.x, y, t.z);
+        dummy.scale.set(1, 0.5, 1);
+        dummy.rotation.set(0, 0, 0);
+        dummy.updateMatrix();
+        planTiles.setMatrixAt(planCount, dummy.matrix);
+        planTiles.setColorAt(planCount++, color);
+        const x = t.x,
+          z = t.z,
+          d = 0.47,
+          ly = y + 0.025;
+        line(x - d, ly, z - d, x + d, ly, z - d, color);
+        line(x + d, ly, z - d, x + d, ly, z + d, color);
+        line(x + d, ly, z + d, x - d, ly, z + d, color);
+        line(x - d, ly, z + d, x - d, ly, z - d, color);
+        if (!valid.has(i)) {
+          line(x - 0.18, ly, z - 0.18, x + 0.18, ly, z + 0.18, color);
+          line(x - 0.18, ly, z + 0.18, x + 0.18, ly, z - 0.18, color);
+        }
+      }
+    }
+    planTiles.count = planCount;
+    planTiles.instanceMatrix.needsUpdate = true;
+    if (planTiles.instanceColor) planTiles.instanceColor.needsUpdate = true;
+    planLineGeometry.setDrawRange(0, lineVertex);
+    planLineGeometry.attributes.position.needsUpdate = true;
+    planLineGeometry.attributes.color.needsUpdate = true;
+    planMaterial.opacity = plan?.dragging
+      ? 0.32
+      : 0.22 + Math.sin(time * 3) * 0.035;
+    hover.visible =
+      hovered !== null &&
+      possessed === null &&
+      !quote?.selected.includes(hovered);
     if (hovered !== null) {
       const t = s.tiles[hovered];
       hover.position.set(t.x, walkable(t) ? 0.16 : 1.5, t.z);
@@ -1218,7 +1337,7 @@ export function mountScene(
       resize();
     },
     zoom: (n) => {
-      scale = THREE.MathUtils.clamp(scale + n, 9, 35);
+      scale = THREE.MathUtils.clamp(scale + n, 7, 35);
       resize();
     },
     rotate: (n) => {
@@ -1234,6 +1353,7 @@ export function mountScene(
       options.onPossession(id);
     },
     getPossessed: () => possessed,
+    cancelDrag,
     dispose: () => {
       disposed = true;
       cancelAnimationFrame(frame);
@@ -1264,6 +1384,7 @@ export function mountScene(
         base.geometry,
         hover.geometry,
       ].forEach((g) => g.dispose());
+      creatureModels.dispose();
       materials.forEach((m) => m.dispose());
       surfaceTextures.forEach((texture) => texture.dispose());
       atlasTextures.forEach((texture) => texture.dispose());
@@ -1274,6 +1395,9 @@ export function mountScene(
       effectTexture.dispose();
       dustMaterial.dispose();
       markerMaterial.dispose();
+      planMaterial.dispose();
+      planLineGeometry.dispose();
+      planLineMaterial.dispose();
       (hover.material as THREE.Material).dispose();
       effectObjects.forEach((m) => (m.material as THREE.Material).dispose());
       renderer.dispose();

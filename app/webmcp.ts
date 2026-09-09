@@ -66,7 +66,7 @@ export function registerGameTools(api: {
       name: 'apply_dungeon_orders',
       title: 'Bauaufträge ausführen',
       description:
-        'Apply a dig designation or build room fields at explicit coordinates in the live game. Uses the same costs and restrictions as the HUD; partially valid batches may partially succeed.',
+        'Apply a dig designation or build room fields at explicit coordinates in the live game. Uses the same costs and restrictions as the HUD. Room batches skip blocked tiles and require enough gold for all valid tiles; insufficient gold builds nothing.',
       inputSchema: {
         type: 'object',
         properties: {
