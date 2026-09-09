@@ -3,8 +3,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { createCreatureModels } from './creature-models';
 import {
   rectangleIndices,
-  quoteConstruction,
-  isRoomTool,
+  quoteDesignation,
+  isDesignationTool,
   type ConstructionSelection,
 } from './construction';
 import {
@@ -728,16 +728,7 @@ export function mountScene(
     unitObjects.set(u.id, g);
     return g;
   }
-  const markerMaterial = new THREE.MeshBasicMaterial({
-    color: '#e8bd6b',
-    transparent: true,
-    opacity: 0.24,
-    depthWrite: false,
-  });
-  const markerGeo = new THREE.BoxGeometry(0.97, 0.06, 0.97);
-  const marks = new THREE.InstancedMesh(markerGeo, markerMaterial, SIZE * SIZE);
-  marks.count = 0;
-  scene.add(marks);
+  const markerGeo = new THREE.BoxGeometry(0.97, 0.035, 0.97);
   const planMaterial = new THREE.MeshBasicMaterial({
     vertexColors: false,
     transparent: true,
@@ -755,7 +746,7 @@ export function mountScene(
   planTiles.renderOrder = 3;
   scene.add(planTiles);
   const planLineGeometry = new THREE.BufferGeometry();
-  const planLinePositions = new Float32Array(SIZE * SIZE * 12 * 3);
+  const planLinePositions = new Float32Array(SIZE * SIZE * 16 * 3);
   const planLineColors = new Float32Array(planLinePositions.length);
   planLineGeometry.setAttribute(
     'position',
@@ -781,9 +772,15 @@ export function mountScene(
   planLines.frustumCulled = false;
   planLines.renderOrder = 4;
   scene.add(planLines);
-  const validPlanColor = new THREE.Color('#60e4ad'),
-    invalidPlanColor = new THREE.Color('#ed7666'),
-    expensivePlanColor = new THREE.Color('#eebc69');
+  const invalidPlanColor = new THREE.Color('#ed7666');
+  const gridColor = new THREE.Color('#485048');
+  const digColor = new THREE.Color('#edc57a');
+  const roomPlanColors = new Map(
+    Object.entries(ROOMS).map(([key, room]) => [
+      key,
+      new THREE.Color(room.color).lerp(new THREE.Color('#e4ecd8'), 0.25),
+    ]),
+  );
   const hover = new THREE.Mesh(
     new THREE.BoxGeometry(1.01, 0.04, 1.01),
     new THREE.MeshBasicMaterial({
@@ -861,7 +858,11 @@ export function mountScene(
     );
     raycaster.setFromCamera(mouse, possessed === null ? camera : eye);
     const point = new THREE.Vector3();
-    if (!raycaster.ray.intersectPlane(ground, point)) return null;
+    // Pick the visible rock surface, not the ground hidden behind a raised wall.
+    const surface = raycaster.intersectObject(terrain, true)[0];
+    if (surface)
+      point.copy(surface.point).addScaledVector(raycaster.ray.direction, 0.015);
+    else if (!raycaster.ray.intersectPlane(ground, point)) return null;
     const x = Math.round(point.x),
       z = Math.round(point.z);
     return inBounds(x, z) ? idx(x, z) : null;
@@ -886,7 +887,7 @@ export function mountScene(
     dragStart = pick(e);
     dragEnd = dragStart;
     dragMoved = false;
-    if (isRoomTool(options.tool()) && dragStart !== null)
+    if (isDesignationTool(options.tool()) && dragStart !== null)
       options.onPreview(area());
     renderer.domElement.setPointerCapture(e.pointerId);
     lastX = e.clientX;
@@ -919,7 +920,7 @@ export function mountScene(
     if (dragStart !== null) {
       if (p !== null && dragEnd !== p) {
         dragEnd = p;
-        if (isRoomTool(options.tool())) options.onPreview(area());
+        if (isDesignationTool(options.tool())) options.onPreview(area());
       }
       dragMoved ||= Math.hypot(e.clientX - lastX, e.clientY - lastY) > 5;
     }
@@ -976,7 +977,7 @@ export function mountScene(
         options.onSelect(end, u?.id ?? null);
       }
     }
-    if (end === null && isRoomTool(tool)) options.onPreview(null);
+    if (end === null && isDesignationTool(tool)) options.onPreview(null);
     cancelDrag();
     if (renderer.domElement.hasPointerCapture(e.pointerId))
       renderer.domElement.releasePointerCapture(e.pointerId);
@@ -1022,7 +1023,7 @@ export function mountScene(
   function blur() {
     keys.clear();
     rightDown = false;
-    if (dragStart !== null && isRoomTool(options.tool()))
+    if (dragStart !== null && isDesignationTool(options.tool()))
       options.onPreview(null);
     cancelDrag();
   }
@@ -1195,71 +1196,72 @@ export function mountScene(
       g.userData.bar.visible = u.hp < u.maxHp || u.kind === 'invader';
       prev.set(u.x, 0, u.z);
     }
-    let count = 0;
-    const selected = new Set(isRoomTool(options.tool()) ? [] : area());
-    for (const t of s.tiles) {
-      if (t.marked || selected.has(idx(t.x, t.z))) {
-        dummy.position.set(t.x, walkable(t) ? 0.15 : 1.42, t.z);
-        dummy.scale.set(1, 1, 1);
-        dummy.rotation.set(0, 0, 0);
-        dummy.updateMatrix();
-        marks.setMatrixAt(count++, dummy.matrix);
-      }
-    }
-    marks.count = count;
-    marks.instanceMatrix.needsUpdate = true;
     const plan = options.construction();
-    const quote = plan ? quoteConstruction(s, plan.room, plan.indices) : null;
+    const quote = plan ? quoteDesignation(s, plan.room, plan.indices) : null;
+    const preview = new Set(quote?.selected ?? []),
+      valid = new Set(quote?.valid ?? []);
+    const planning = isDesignationTool(options.tool());
     let planCount = 0,
       lineVertex = 0;
-    if (quote && possessed === null) {
-      const valid = new Set(quote.valid);
-      const line = (
-        ax: number,
-        ay: number,
-        az: number,
-        bx: number,
-        by: number,
-        bz: number,
-        color: THREE.Color,
-      ) => {
-        for (const v of [
-          [ax, ay, az],
-          [bx, by, bz],
-        ]) {
-          planLinePositions.set(v, lineVertex * 3);
-          planLineColors.set([color.r, color.g, color.b], lineVertex * 3);
-          lineVertex++;
-        }
-      };
-      for (const i of quote.selected) {
-        const t = s.tiles[i],
-          y = walkable(t) ? 0.12 : 1.48;
-        const color = valid.has(i)
-          ? quote.shortfall
-            ? expensivePlanColor
-            : validPlanColor
-          : invalidPlanColor;
-        dummy.position.set(t.x, y, t.z);
-        dummy.scale.set(1, 0.5, 1);
-        dummy.rotation.set(0, 0, 0);
-        dummy.updateMatrix();
-        planTiles.setMatrixAt(planCount, dummy.matrix);
-        planTiles.setColorAt(planCount++, color);
+    const line = (
+      ax: number,
+      ay: number,
+      az: number,
+      bx: number,
+      by: number,
+      bz: number,
+      color: THREE.Color,
+    ) => {
+      planLinePositions.set([ax, ay, az, bx, by, bz], lineVertex * 3);
+      for (let n = 0; n < 2; n++) {
+        planLineColors.set([color.r, color.g, color.b], lineVertex * 3);
+        lineVertex++;
+      }
+    };
+    // One pass means draft and saved orders never overflow the SIZE² instance budget.
+    if (possessed === null)
+      for (const t of s.tiles) {
+        const i = idx(t.x, t.z),
+          drafted = preview.has(i),
+          ordered = !!t.plannedRoom || t.marked;
+        if (!drafted && !ordered && !(planning && t.seen)) continue;
+        const room = drafted ? plan!.room : t.plannedRoom;
+        const blocked = drafted && !valid.has(i);
+        const color = blocked
+          ? invalidPlanColor
+          : drafted || ordered
+            ? room && room !== 'dig'
+              ? roomPlanColors.get(room)!
+              : digColor
+            : gridColor;
         const x = t.x,
           z = t.z,
+          y = walkable(t) ? 0.12 : 1.48,
           d = 0.47,
           ly = y + 0.025;
+        if (drafted || ordered) {
+          dummy.position.set(x, y, z);
+          dummy.scale.set(1, 1, 1);
+          dummy.rotation.set(0, 0, 0);
+          dummy.updateMatrix();
+          planTiles.setMatrixAt(planCount, dummy.matrix);
+          planTiles.setColorAt(planCount++, color);
+        }
         line(x - d, ly, z - d, x + d, ly, z - d, color);
         line(x + d, ly, z - d, x + d, ly, z + d, color);
         line(x + d, ly, z + d, x - d, ly, z + d, color);
         line(x - d, ly, z + d, x - d, ly, z - d, color);
-        if (!valid.has(i)) {
+        if (blocked) {
           line(x - 0.18, ly, z - 0.18, x + 0.18, ly, z + 0.18, color);
           line(x - 0.18, ly, z + 0.18, x + 0.18, ly, z - 0.18, color);
+        } else if ((drafted || ordered) && room && room !== 'dig') {
+          // An inset diamond distinguishes a future room from a plain excavation grid.
+          line(x, ly, z - 0.13, x + 0.13, ly, z, color);
+          line(x + 0.13, ly, z, x, ly, z + 0.13, color);
+          line(x, ly, z + 0.13, x - 0.13, ly, z, color);
+          line(x - 0.13, ly, z, x, ly, z - 0.13, color);
         }
       }
-    }
     planTiles.count = planCount;
     planTiles.instanceMatrix.needsUpdate = true;
     if (planTiles.instanceColor) planTiles.instanceColor.needsUpdate = true;
@@ -1394,7 +1396,6 @@ export function mountScene(
       shadowMaterial.dispose();
       effectTexture.dispose();
       dustMaterial.dispose();
-      markerMaterial.dispose();
       planMaterial.dispose();
       planLineGeometry.dispose();
       planLineMaterial.dispose();

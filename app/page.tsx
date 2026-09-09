@@ -93,7 +93,11 @@ import {
 import { mountScene, type SceneControls } from './scene';
 import {
   isRoomTool,
-  quoteConstruction,
+  quoteDesignation,
+  queueDesignation,
+  cancelDesignations,
+  isDesignationTool,
+  type DesignationTool,
   commitConstruction,
   type ConstructionSelection,
 } from './construction';
@@ -143,7 +147,7 @@ const toolMeta: Record<
   dig: {
     name: 'Graben',
     description:
-      'Markiere Erde oder Gold mit einem Klick oder ziehe ein Rechteck. Schürflinge erledigen erreichbare Aufträge.',
+      'Ziehe ein Raster über Erde oder Gold. Wähle Nur graben oder einen späteren Raum; Enter setzt den Auftrag.',
     icon: Pickaxe,
     cost: 'Kostenlos',
     key: '2',
@@ -271,8 +275,8 @@ function Minimap({
                         : '#464f4e'
                       : '#303c40';
       c.fillRect(t.x * cell, t.z * cell, 5, 5);
-      if (t.marked) {
-        c.fillStyle = '#e8bb67';
+      if (t.marked || t.plannedRoom) {
+        c.fillStyle = t.plannedRoom ? ROOMS[t.plannedRoom].color : '#e8bb67';
         c.fillRect(t.x * cell + 1, t.z * cell + 1, 3, 3);
       }
     }
@@ -405,10 +409,15 @@ export default function App() {
   }, []);
   const changeTool = useCallback(
     (next: Tool) => {
-      updateConstruction(null);
+      const previousPlan = constructionRef.current;
+      updateConstruction(
+        isDesignationTool(next) && previousPlan && !previousPlan.dragging
+          ? { ...previousPlan, room: next }
+          : null,
+      );
       sceneRef.current?.cancelDrag();
       setTool(next);
-      if (isRoomTool(next)) setSelected(null);
+      if (isDesignationTool(next)) setSelected(null);
       toolRef.current = next;
       setCarrying(null);
       carryRef.current = null;
@@ -425,7 +434,7 @@ export default function App() {
     (indices: number[]) => {
       if (!indices.length) return;
       const s = stateRef.current;
-      if (isRoomTool(toolRef.current)) {
+      if (isDesignationTool(toolRef.current)) {
         updateConstruction({ room: toolRef.current, indices, dragging: false });
         sound('click');
         return;
@@ -446,15 +455,11 @@ export default function App() {
   const buildConstruction = useCallback(() => {
     const plan = constructionRef.current;
     if (!plan || plan.dragging) return;
-    const result = commitConstruction(
-      stateRef.current,
-      plan.room,
-      plan.indices,
-    );
+    const result = queueDesignation(stateRef.current, plan.room, plan.indices);
     notify(result.message);
-    if (result.built) {
+    if (result.queued) {
       updateConstruction(null);
-      sound('build');
+      sound('click');
     }
     refresh();
   }, [notify, refresh, sound, updateConstruction]);
@@ -472,7 +477,7 @@ export default function App() {
         construction: () => constructionRef.current,
         onPreview: (indices) => {
           if (indices === null) updateConstruction(null);
-          else if (isRoomTool(toolRef.current))
+          else if (isDesignationTool(toolRef.current))
             updateConstruction({
               room: toolRef.current,
               indices,
@@ -631,15 +636,31 @@ export default function App() {
   }, [refresh, saveGame, sound]);
   useEffect(() => {
     function key(e: KeyboardEvent) {
+      const target = e.target as HTMLElement;
       if (
-        ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(
-          (e.target as HTMLElement).tagName,
-        ) ||
         help ||
         settings ||
-        newGameDialog
+        newGameDialog ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
       )
         return;
+      if (constructionRef.current && e.key === 'Escape') {
+        e.preventDefault();
+        updateConstruction(null);
+        sceneRef.current?.cancelDrag();
+        return;
+      }
+      if (
+        constructionRef.current &&
+        e.key === 'Enter' &&
+        !e.repeat &&
+        target.closest('.designation-choice, .build-cards, .queued-order-focus')
+      ) {
+        e.preventDefault();
+        buildConstruction();
+        return;
+      }
+      if (target.tagName === 'BUTTON') return;
       if (e.code === 'Space') {
         e.preventDefault();
         if (started) setPaused((p) => !p);
@@ -750,22 +771,48 @@ export default function App() {
         ? (['worker', 'heal', 'bolt', 'rally'] as Tool[])
         : (['trap', 'door', 'sell'] as Tool[]);
   const constructionQuote = construction
-    ? quoteConstruction(s, construction.room, construction.indices)
+    ? quoteDesignation(s, construction.room, construction.indices)
     : null;
+  const queuedOrders = (['dig', ...illustratedRooms] as DesignationTool[])
+    .map((kind) => {
+      const indices = s.tiles.flatMap((t, i) =>
+        t.plannedRoom === kind || (kind === 'dig' && t.marked && !t.plannedRoom)
+          ? [i]
+          : [],
+      );
+      return {
+        kind,
+        indices,
+        cost: kind === 'dig' ? 0 : indices.length * ROOMS[kind].cost,
+        waitingForGold:
+          kind !== 'dig' &&
+          indices.some(
+            (i) =>
+              s.tiles[i].owned &&
+              s.tiles[i].kind === 'floor' &&
+              s.gold < ROOMS[kind].cost,
+          ),
+      };
+    })
+    .filter((order) => order.indices.length);
   const hoverTile = hovered === null ? null : s.tiles[hovered];
   const hoverName = hoverTile
-    ? hoverTile.room
-      ? ROOMS[hoverTile.room].name
-      : {
-          rock: 'Unzerstörbarer Fels',
-          earth: 'Erdreich',
-          gold: 'Goldader',
-          floor: hoverTile.owned ? 'Dein Reich' : 'Unbeanspruchter Boden',
-          core: 'Die ewige Glut',
-          portal: 'Tiefentor',
-          entry: 'Sonnenpfad',
-          water: 'Unterirdischer See',
-        }[hoverTile.kind]
+    ? hoverTile.plannedRoom
+      ? `Geplant: ${ROOMS[hoverTile.plannedRoom].name}`
+      : hoverTile.marked
+        ? 'Grabungsauftrag'
+        : hoverTile.room
+          ? ROOMS[hoverTile.room].name
+          : {
+              rock: 'Unzerstörbarer Fels',
+              earth: 'Erdreich',
+              gold: 'Goldader',
+              floor: hoverTile.owned ? 'Dein Reich' : 'Unbeanspruchter Boden',
+              core: 'Die ewige Glut',
+              portal: 'Tiefentor',
+              entry: 'Sonnenpfad',
+              water: 'Unterirdischer See',
+            }[hoverTile.kind]
     : null;
   return translateTree(
     <main
@@ -1138,6 +1185,76 @@ export default function App() {
               </button>
             </div>
           )}
+          {queuedOrders.length > 0 && possessed === null && (
+            <aside className="queued-orders" aria-label="Gesetzte Aufträge">
+              <h3>
+                <Layers3 size={14} />
+                AUFTRÄGE
+              </h3>
+              {queuedOrders.map((order) => (
+                <div className="queued-order" key={order.kind}>
+                  <button
+                    className="queued-order-focus"
+                    onClick={() => {
+                      changeTool(order.kind);
+                      updateConstruction({
+                        room: order.kind,
+                        indices: order.indices,
+                        dragging: false,
+                      });
+                      const first = stateRef.current.tiles[order.indices[0]];
+                      sceneRef.current?.focus(first.x, first.z);
+                    }}
+                  >
+                    <i
+                      style={{
+                        background:
+                          order.kind === 'dig'
+                            ? '#e8bb67'
+                            : ROOMS[order.kind].color,
+                      }}
+                    />
+                    <span>
+                      {order.kind === 'dig'
+                        ? 'Nur graben'
+                        : ROOMS[order.kind].name}
+                      <small>
+                        {order.waitingForGold
+                          ? 'Wartet auf Baugold'
+                          : 'Geplant'}
+                      </small>
+                    </span>
+                    <b>{order.indices.length}</b>
+                  </button>
+                  <button
+                    className="queued-order-cancel"
+                    aria-label={`Aufträge löschen: ${order.kind === 'dig' ? 'Nur graben' : ROOMS[order.kind].name}`}
+                    onClick={() => {
+                      cancelDesignations(stateRef.current, order.indices);
+                      updateConstruction(null);
+                      refresh();
+                    }}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+              <p>
+                {queuedOrders.some((order) => order.kind !== 'dig')
+                  ? 'Graben → Beanspruchen → Bauen'
+                  : 'Schürflinge graben erreichbare Felder aus.'}
+              </p>
+              {queuedOrders.some((order) => order.cost > 0) && (
+                <p>
+                  <span>Geplanter Ausbau:</span>{' '}
+                  {fmt(
+                    queuedOrders.reduce((sum, order) => sum + order.cost, 0),
+                  )}{' '}
+                  <span>Gold</span>
+                </p>
+              )}
+            </aside>
+          )}
           {construction && constructionQuote && possessed === null && (
             <aside
               className={`construction-command ${construction.dragging ? 'is-drawing' : ''}`}
@@ -1149,7 +1266,11 @@ export default function App() {
                   <small>
                     {construction.dragging ? 'FLÄCHE MARKIEREN' : 'BAUPLAN'}
                   </small>
-                  <strong>{ROOMS[construction.room].name}</strong>
+                  <strong>
+                    {construction.room === 'dig'
+                      ? 'Nur graben'
+                      : ROOMS[construction.room].name}
+                  </strong>
                 </div>
                 <b className="construction-size">
                   {constructionQuote.width} × {constructionQuote.depth}
@@ -1165,10 +1286,36 @@ export default function App() {
                   <X size={18} />
                 </button>
               </div>
+              <div
+                className="designation-choice"
+                role="group"
+                aria-label="Nutzung nach dem Graben"
+              >
+                <small>DANACH ANLEGEN</small>
+                {(['dig', ...illustratedRooms] as DesignationTool[]).map(
+                  (kind) => {
+                    const Icon = kind === 'dig' ? Pickaxe : roomIcons[kind];
+                    return (
+                      <button
+                        key={kind}
+                        title={kind === 'dig' ? 'Nur graben' : ROOMS[kind].name}
+                        aria-label={
+                          kind === 'dig' ? 'Nur graben' : ROOMS[kind].name
+                        }
+                        aria-pressed={construction.room === kind}
+                        disabled={kind === 'forge' && !s.unlocked}
+                        onClick={() => changeTool(kind)}
+                      >
+                        <Icon size={18} />
+                      </button>
+                    );
+                  },
+                )}
+              </div>
               <div className="construction-counts" aria-live="polite">
                 <span className="valid">
                   <i />
-                  {constructionQuote.valid.length} <span>bebaubar</span>
+                  {constructionQuote.valid.length} <span>geplant</span>
                 </span>
                 {constructionQuote.blocked.length > 0 && (
                   <span className="blocked">
@@ -1176,17 +1323,39 @@ export default function App() {
                     {constructionQuote.blocked.length} <span>blockiert</span>
                   </span>
                 )}
-                <strong
-                  className={constructionQuote.shortfall ? 'gold-missing' : ''}
-                >
+                <strong>
                   <Coins size={15} />
                   {fmt(constructionQuote.cost)} <span>Gold</span>
                 </strong>
               </div>
+              <div className="designation-stages">
+                <span>
+                  <Pickaxe size={13} />
+                  {constructionQuote.excavate.length} <span>graben</span>
+                </span>
+                {construction.room !== 'dig' && (
+                  <>
+                    <span>→</span>
+                    <span>
+                      {constructionQuote.claim.length} <span>beanspruchen</span>
+                    </span>
+                    <span>→</span>
+                    <span>
+                      <Hammer size={13} />
+                      {constructionQuote.ready.length} <span>baubereit</span>
+                    </span>
+                  </>
+                )}
+              </div>
+              <p className="construction-instruction">
+                {construction.room === 'dig'
+                  ? 'Schürflinge graben erreichbare Felder aus.'
+                  : 'Erst graben, dann beanspruchen und bauen. Gold wird je fertigem Feld bezahlt.'}
+              </p>
               {constructionQuote.shortfall > 0 && (
                 <p className="construction-warning">
-                  <span>Fehlendes Gold:</span>{' '}
-                  {fmt(constructionQuote.shortfall)}
+                  Fehlendes Gold stoppt nur den Bau. Der Grabungsauftrag bleibt
+                  aktiv.
                 </p>
               )}
               {!constructionQuote.valid.length && constructionQuote.reason && (
@@ -1202,13 +1371,31 @@ export default function App() {
                 <div className="construction-actions">
                   <button
                     className="construction-build"
-                    disabled={!constructionQuote.canBuild}
+                    disabled={!constructionQuote.canPlan}
                     onClick={buildConstruction}
                   >
                     <Hammer size={16} />
-                    <span>Bereich bauen</span>
+                    <span>Auftrag setzen</span>
                     <kbd>ENTER</kbd>
                   </button>
+                  {constructionQuote.existing.length > 0 && (
+                    <button
+                      className="designation-remove"
+                      title="Gesetzte Aufträge in dieser Fläche entfernen"
+                      onClick={() => {
+                        cancelDesignations(
+                          stateRef.current,
+                          construction.indices,
+                        );
+                        updateConstruction(null);
+                        refresh();
+                        notify('Aufträge entfernt.');
+                      }}
+                    >
+                      <X size={14} />
+                      <span>Aufträge löschen</span>
+                    </button>
+                  )}
                   <button onClick={() => updateConstruction(null)}>
                     <span>Verwerfen</span>
                     <kbd>ESC</kbd>
@@ -1507,8 +1694,8 @@ export default function App() {
               ) : (
                 <span className="drag-hint">
                   <Move size={13} />{' '}
-                  {isRoomTool(tool)
-                    ? 'Fläche ziehen · Enter baut · Esc verwirft'
+                  {isDesignationTool(tool)
+                    ? 'Raster ziehen · Nutzung wählen · Enter setzt Auftrag'
                     : 'Ziehen für mehrere Felder'}
                 </span>
               )}
@@ -1618,7 +1805,7 @@ export default function App() {
               {
                 icon: Layers3,
                 title: '02 / Errichten',
-                text: 'Wähle einen Raum und ziehe eine Fläche auf eigenem, freiem Boden. Grün zeigt bebaubare, Rot blockierte Felder. Prüfe die Goldkosten und baue mit Enter; Escape verwirft den Plan. Ruheplätze und mindestens 4 Pilzgarten-Felder ermöglichen neue Bewohner; zwei Ruhefelder bieten einen Platz.',
+                text: 'Ziehe mit Graben oder einem Raumwerkzeug ein Raster über bekanntes Erdreich oder freien Boden. Wähle danach Nur graben oder einen Raum und bestätige mit Enter. Schürflinge graben, beanspruchen und bauen selbstständig; Gold wird erst beim Bau je Feld bezahlt. Aufträge bleiben im Spielstand gespeichert. Ruheplätze und mindestens 4 Pilzgarten-Felder ermöglichen neue Bewohner; zwei Ruhefelder bieten einen Platz.',
               },
               {
                 icon: Users,

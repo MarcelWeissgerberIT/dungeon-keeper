@@ -4725,3 +4725,149 @@ small {
     display: none;
   }
 }
+
+/* Orders are carved into the world grid and survive the draft dialog. */
+.designation-choice {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 12px;
+  border-top: 1px solid #62563c80;
+  padding-top: 10px;
+}
+.designation-choice > small {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  max-width: 55px;
+  color: #b5a785;
+  margin-right: auto;
+}
+.designation-choice button {
+  padding: 7px;
+  border: 1px solid #5a513b;
+  background: #090b0980;
+  color: #ad9e80;
+}
+.designation-choice button[aria-pressed='true'] {
+  color: #f3d39b;
+  border-color: #d7b56c;
+  background: #75603950;
+  box-shadow: inset 0 0 8px #c89e4220;
+}
+.designation-choice button:disabled {
+  opacity: 0.25;
+}
+.designation-stages {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  font-size: 10px;
+  color: #c7bb9f;
+  margin-bottom: 9px;
+}
+.designation-stages > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.construction-instruction {
+  line-height: 1.5;
+  margin-bottom: 9px;
+}
+.construction-actions {
+  flex-wrap: wrap;
+}
+.construction-actions .designation-remove {
+  color: #df9b7f;
+  font-size: 9px;
+}
+.queued-orders {
+  position: absolute;
+  z-index: 12;
+  top: 125px;
+  right: 22px;
+  width: 224px;
+  max-height: 250px;
+  overflow-y: auto;
+  color: #cfc1a2;
+  background: linear-gradient(100deg, #18150fe8, #0e100de0);
+  border-left: 2px solid #8e784d;
+  padding: 10px 10px 5px;
+  pointer-events: auto;
+  box-shadow: 0 5px 16px #0007;
+}
+.game-shell:not(.is-playing) .queued-orders {
+  top: 265px;
+}
+.queued-orders h3 {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  margin: 0 0 7px;
+}
+.queued-orders > p {
+  font-size: 9px;
+  color: #9b9d87;
+  margin: 7px 0;
+}
+.queued-order {
+  display: flex;
+  border-top: 1px solid #68593850;
+  align-items: center;
+}
+.queued-order-focus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  text-align: left;
+  padding: 7px 0;
+  font-size: 11px;
+}
+.queued-order-focus > i {
+  width: 7px;
+  height: 7px;
+  transform: rotate(45deg);
+}
+.queued-order-focus > span {
+  flex: 1;
+}
+.queued-order-focus small {
+  display: block;
+  color: #a49b80;
+  font-size: 9px;
+  margin-top: 3px;
+}
+.queued-order-focus b {
+  color: #ebd49a;
+  font-size: 13px;
+}
+.queued-order-cancel {
+  padding: 8px 0 8px 8px;
+  color: #b6a18a;
+}
+@media (max-width: 780px) {
+  .designation-choice {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .designation-choice button {
+    padding: 5px;
+  }
+  .designation-choice > small {
+    width: 100%;
+    max-width: none;
+    margin-bottom: 3px;
+  }
+  .queued-orders {
+    top: 112px;
+    right: 10px;
+    width: 170px;
+    max-height: 160px;
+  }
+  .game-shell:not(.is-playing) .queued-orders {
+    top: 245px;
+  }
+}

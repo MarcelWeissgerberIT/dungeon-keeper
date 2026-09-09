@@ -51,13 +51,14 @@ export function registerGameTools(api: {
           })),
           tiles: s.tiles
             .filter((t) => t.seen)
-            .map(({ x, z, kind, room, owned, marked }) => ({
+            .map(({ x, z, kind, room, owned, marked, plannedRoom }) => ({
               x,
               z,
               kind,
               room,
               owned,
               marked,
+              plannedRoom,
             })),
         };
       },
@@ -66,7 +67,7 @@ export function registerGameTools(api: {
       name: 'apply_dungeon_orders',
       title: 'Bauaufträge ausführen',
       description:
-        'Apply a dig designation or build room fields at explicit coordinates in the live game. Uses the same costs and restrictions as the HUD. Room batches skip blocked tiles and require enough gold for all valid tiles; insufficient gold builds nothing.',
+        'Toggle excavation designations or immediately construct room fields on already claimed ground at explicit coordinates. Room batches skip blocked tiles and require enough gold for all valid tiles; insufficient gold builds nothing. This immediate operation is separate from the HUD future-room queue.',
       inputSchema: {
         type: 'object',
         properties: {

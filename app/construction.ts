@@ -8,8 +8,12 @@ import {
   type Tool,
 } from './game';
 
+export type DesignationTool = Room | 'dig';
+export const isDesignationTool = (tool: Tool): tool is DesignationTool =>
+  tool === 'dig' || isRoomTool(tool);
+
 export interface ConstructionSelection {
-  room: Room;
+  room: DesignationTool;
   indices: number[];
   dragging: boolean;
 }
@@ -89,4 +93,111 @@ export function commitConstruction(
     };
   for (const i of quote.valid) applyTool(s, room, i);
   return { built: quote.valid.length, message: 'Bauplan errichtet.' };
+}
+
+/** A future room may occupy known earth/gold or cleared, as-yet unclaimed floor. */
+export function quoteDesignation(
+  s: GameState,
+  tool: DesignationTool,
+  indices: number[],
+) {
+  const selected = [...new Set(indices)].filter(
+    (i) => Number.isInteger(i) && i >= 0 && i < s.tiles.length,
+  );
+  const valid: number[] = [],
+    blocked: number[] = [],
+    excavate: number[] = [],
+    claim: number[] = [],
+    ready: number[] = [];
+  let reason = '';
+  for (const i of selected) {
+    const t = s.tiles[i];
+    const problem =
+      s.status !== 'playing'
+        ? 'Diese Expedition ist beendet.'
+        : !t.seen
+          ? 'Dieses Gebiet ist noch nicht erkundet.'
+          : t.room || t.trap || t.door
+            ? 'Dieses Feld ist bereits bebaut.'
+            : !['earth', 'gold', 'floor'].includes(t.kind)
+              ? 'Fels, Wasser und besondere Orte bleiben frei.'
+              : tool === 'dig' && t.kind === 'floor' && !t.plannedRoom
+                ? 'Hier ist bereits ausgegraben.'
+                : tool === 'forge' && !s.unlocked
+                  ? 'Die Werkstatt benötigt abgeschlossene Forschung.'
+                  : '';
+    if (problem) {
+      blocked.push(i);
+      reason ||= problem;
+      continue;
+    }
+    valid.push(i);
+    if (t.kind !== 'floor') excavate.push(i);
+    else if (!t.owned) claim.push(i);
+    else ready.push(i);
+  }
+  const xs = selected.map((i) => i % SIZE),
+    zs = selected.map((i) => Math.floor(i / SIZE));
+  const cost = tool === 'dig' ? 0 : valid.length * ROOMS[tool].cost;
+  return {
+    selected,
+    valid,
+    blocked,
+    excavate,
+    claim,
+    ready,
+    cost,
+    reason,
+    width: selected.length ? Math.max(...xs) - Math.min(...xs) + 1 : 0,
+    depth: selected.length ? Math.max(...zs) - Math.min(...zs) + 1 : 0,
+    shortfall: Math.max(0, cost - Math.floor(s.gold)),
+    canPlan: valid.length > 0 && s.status === 'playing',
+    existing: selected.filter(
+      (i) => s.tiles[i].marked || s.tiles[i].plannedRoom,
+    ),
+  };
+}
+
+/** Idempotent designations; changing the future room replaces the old order. */
+export function queueDesignation(
+  s: GameState,
+  tool: DesignationTool,
+  indices: number[],
+) {
+  const quote = quoteDesignation(s, tool, indices);
+  if (!quote.canPlan)
+    return {
+      queued: 0,
+      message: quote.reason || 'Keine geeigneten Felder ausgewählt.',
+    };
+  for (const i of quote.valid) {
+    const t = s.tiles[i],
+      room = tool === 'dig' ? null : tool;
+    if (t.kind === 'floor' && t.plannedRoom !== room) t.progress = 0;
+    t.plannedRoom = room;
+    t.marked = t.kind === 'earth' || t.kind === 'gold';
+  }
+  s.revision++;
+  return {
+    queued: quote.valid.length,
+    message:
+      tool === 'dig'
+        ? 'Grabungsauftrag gesetzt.'
+        : 'Raumplan gesetzt. Deine Schürflinge übernehmen den Ausbau.',
+  };
+}
+
+export function cancelDesignations(s: GameState, indices: number[]) {
+  if (s.status !== 'playing') return 0;
+  let removed = 0;
+  for (const i of new Set(indices)) {
+    const t = s.tiles[i];
+    if (!t || (!t.marked && !t.plannedRoom)) continue;
+    t.marked = false;
+    t.plannedRoom = null;
+    t.progress = 0;
+    removed++;
+  }
+  if (removed) s.revision++;
+  return removed;
 }

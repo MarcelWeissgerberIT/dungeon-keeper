@@ -40,6 +40,10 @@ This release contains one replayable expedition with three difficulty settings a
 
 The current visual set was generated through the authenticated OpenArt MCP connection. Generation identifiers and prompts are recorded in `docs/openart-generations.json`. The initial fallback illustrations have been replaced. No OpenArt credentials or runtime generation calls are shipped in the game.
 
-### Area construction
+### Excavation and future-room grids
 
-Choose a room and drag across the dungeon (a single click selects one tile). Releasing the mouse leaves a construction plan. Green tiles are buildable, red tiles are blocked; amber means the plan needs more gold. The HUD shows dimensions, valid/blocked counts and the total cost. Press **Enter** or **Build area** to construct all valid fields, or **Escape** to discard. Insufficient total gold changes nothing. New selections replace the plan; changing tools or loading a game clears it. Plans are temporary and are not saved as completed construction. Excavation orders still mark work for the delvers.
+Use **Excavate** or a room tool and drag a rectangle across known earth, gold or empty ground. The visible grid previews the exact tiles. In **Build afterwards**, choose **Excavate only** or a future room without redrawing the area; press **Enter** or **Place order**. Red tiles are unsuitable; room-coloured tiles with inset diamonds are future rooms, and amber grids are excavation-only orders.
+
+Orders remain visible in the dungeon, minimap and order list. Delvers automatically excavate reachable tiles, claim exposed ground, then walk to and construct planned room tiles. Planning is free; each completed room tile charges its normal price. If gold runs out, excavation can continue and construction waits. An inaccessible area stays marked until a passage is opened. Orders are included in saved games; older saves remain compatible.
+
+**Escape** discards only the unconfirmed draft. The order list lets you focus/edit an existing plan or remove its remaining orders. **Remove orders** on a selected area, or Sell on a designated tile, removes unfinished work without selling completed rooms or charging gold. Changing a future room replaces its unpaid order. Direct WebMCP construction remains a separate immediate-build operation on claimed ground, with an atomic total-price check.

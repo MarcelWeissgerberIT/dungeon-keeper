@@ -28,6 +28,7 @@ export interface Tile {
   marked: boolean;
   progress: number;
   room: Room | null;
+  plannedRoom: Room | null;
   trap: number;
   door: number;
   trapCooldown: number;
@@ -308,6 +309,7 @@ export function createGame(
         marked: false,
         progress: 0,
         room: null,
+        plannedRoom: null,
         trap: 0,
         door: 0,
         trapCooldown: 0,
@@ -445,6 +447,7 @@ export function applyTool(
     if (!['earth', 'gold'].includes(t.kind))
       return { ok: false, message: 'Hier gibt es kein abbaubares Erdreich.' };
     t.marked = !t.marked;
+    if (!t.marked) t.plannedRoom = null;
     s.revision++;
     return { ok: true };
   }
@@ -491,6 +494,13 @@ export function applyTool(
     effect(s, t, 'bolt');
     return { ok: true };
   }
+  if (tool === 'sell' && (t.plannedRoom || t.marked)) {
+    t.plannedRoom = null;
+    t.marked = false;
+    t.progress = 0;
+    s.revision++;
+    return { ok: true, message: 'Auftrag entfernt.' };
+  }
   if (!walkable(t) || !t.owned || t.kind === 'core' || t.kind === 'portal')
     return {
       ok: false,
@@ -525,8 +535,8 @@ export function applyTool(
   if (tool === 'trap' || tool === 'door') {
     if (!s.unlocked)
       return { ok: false, message: 'Benötigt abgeschlossene Forschung.' };
-    if (t.room || t.trap || t.door)
-      return { ok: false, message: 'Wähle einen freien Gang.' };
+    if (t.room || t.trap || t.door || t.plannedRoom)
+      return { ok: false, message: 'Wähle einen freien Gang ohne Raumplan.' };
     if (s.forge < 1 || s.gold < 150)
       return { ok: false, message: 'Du benötigst 1 Werkstück und 150 Gold.' };
     s.gold -= 150;
@@ -547,6 +557,8 @@ export function applyTool(
       };
     s.gold -= ROOMS[r].cost;
     t.room = r;
+    t.plannedRoom = null;
+    t.progress = 0;
     s.built++;
     s.revision++;
     effect(s, t, 'spawn');
@@ -621,7 +633,10 @@ function moveTo(
   return !u.path.length;
 }
 function workerTick(s: GameState, u: Unit, dt: number) {
-  if (u.carry >= 200 || (u.carry > 0 && !s.tiles.some((t) => t.marked))) {
+  if (
+    s.gold < capacity(s) &&
+    (u.carry >= 200 || (u.carry > 0 && !s.tiles.some((t) => t.marked)))
+  ) {
     const goal = nearest(s, u, (t) => t.room === 'vault' || t.kind === 'core');
     if (goal !== null) {
       u.state = 'Trägt Gold';
@@ -635,9 +650,31 @@ function workerTick(s: GameState, u: Unit, dt: number) {
       return;
     }
   }
+  // A claimed construction tile is a worker job. Planning itself reserves no gold.
+  const building = nearest(
+    s,
+    u,
+    (t) =>
+      !!t.plannedRoom &&
+      !roomBuildProblem(s, t.plannedRoom, idx(t.x, t.z)) &&
+      s.gold >= ROOMS[t.plannedRoom].cost,
+  );
+  if (building !== null) {
+    const t = s.tiles[building];
+    u.state = 'Errichtet Raum';
+    if (moveTo(s, u, building, dt, 2)) {
+      t.progress += dt;
+      if (t.progress >= 1.4 && t.plannedRoom) {
+        const result = applyTool(s, t.plannedRoom, building);
+        if (result.ok) u.target = null;
+      }
+    }
+    return;
+  }
   // Keep a chosen dig job while walking; select only reachable exposed faces.
   const jobs = s.tiles.filter(
-    (t) => t.marked && ['earth', 'gold'].includes(t.kind),
+    (t) =>
+      t.marked && (t.kind === 'earth' || (t.kind === 'gold' && u.carry < 200)),
   );
   jobs.sort(
     (a, b) =>
@@ -700,6 +737,22 @@ function workerTick(s: GameState, u: Unit, dt: number) {
         u.target = null;
       }
     }
+    return;
+  }
+  if (
+    s.tiles.some(
+      (t) =>
+        t.plannedRoom &&
+        t.owned &&
+        t.kind === 'floor' &&
+        s.gold < ROOMS[t.plannedRoom].cost,
+    )
+  ) {
+    u.state = 'Wartet auf Baugold';
+    return;
+  }
+  if (u.carry >= 200 && s.gold >= capacity(s)) {
+    u.state = 'Goldlager voll';
     return;
   }
   u.state = 'Wartet auf Arbeit';
@@ -1060,7 +1113,16 @@ export function deserialize(raw: string): GameState | null {
           t.z !== Math.floor(i / SIZE) ||
           !kinds.includes(t.kind) ||
           ![t.progress, t.trap, t.door, t.gold].every(finite) ||
-          (t.room !== null && !Object.hasOwn(ROOMS, t.room)),
+          (t.room !== null && !Object.hasOwn(ROOMS, t.room)) ||
+          (t.plannedRoom !== undefined &&
+            t.plannedRoom !== null &&
+            (typeof t.plannedRoom !== 'string' ||
+              !Object.hasOwn(ROOMS, t.plannedRoom) ||
+              !['earth', 'gold', 'floor'].includes(t.kind) ||
+              !!t.room ||
+              !!t.trap ||
+              !!t.door ||
+              !t.seen)),
       )
     )
       return null;
@@ -1157,6 +1219,8 @@ export function deserialize(raw: string): GameState | null {
       return null;
     s.tiles.forEach((t: Tile) => {
       t.trapCooldown = 0;
+      t.plannedRoom ??= null;
+      if (t.plannedRoom && ['earth', 'gold'].includes(t.kind)) t.marked = true;
     });
     s.units.forEach((u: Unit) => {
       u.path = [];

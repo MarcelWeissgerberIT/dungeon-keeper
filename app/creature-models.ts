@@ -1803,7 +1803,9 @@ export function createCreatureModels(): CreatureModels {
         fightJob = /kampf|greift an|trainier|attack|fight|zerstört/.test(label);
         sleepJob = /schläf|schlaf|sleep|ruht|rest/.test(label);
         eatJob = /isst|essen|eat/.test(label);
-        studyJob = /forsch|studier|liest|research|study|schmied/.test(label);
+        studyJob = /forsch|studier|liest|research|study|schmied|errichtet/.test(
+          label,
+        );
       }
       const stationary = 1 - clamp(velocity * 2);
       walk += (clamp(velocity / 1.2) - walk) * blend;

@@ -6,6 +6,46 @@ import {
 } from 'react';
 export type Locale = 'de' | 'en';
 const messages: Record<string, string> = {
+  'Nur graben': 'Excavate only',
+  'Nutzung nach dem Graben': 'Use after excavation',
+  'DANACH ANLEGEN': 'BUILD AFTERWARDS',
+  geplant: 'planned',
+  Geplant: 'Planned',
+  graben: 'excavate',
+  beanspruchen: 'claim',
+  baubereit: 'ready to build',
+  'Auftrag setzen': 'Place order',
+  'Aufträge löschen': 'Remove orders',
+  'Gesetzte Aufträge': 'Placed orders',
+  AUFTRÄGE: 'ORDERS',
+  'In Bearbeitung': 'Pending',
+  'Wartet auf Baugold': 'Waiting for building gold',
+  'Errichtet Raum': 'Constructing room',
+  'Graben → Beanspruchen → Bauen': 'Excavate → Claim → Build',
+  'Geplanter Ausbau:': 'Planned construction:',
+  Grabungsauftrag: 'Excavation order',
+  'Grabungsauftrag gesetzt.': 'Excavation order placed.',
+  'Raumplan gesetzt. Deine Schürflinge übernehmen den Ausbau.':
+    'Room plan placed. Your delvers will carry out the work.',
+  'Auftrag entfernt.': 'Order removed.',
+  'Aufträge entfernt.': 'Orders removed.',
+  'Fels, Wasser und besondere Orte bleiben frei.':
+    'Rock, water and special locations must remain clear.',
+  'Hier ist bereits ausgegraben.': 'This ground is already excavated.',
+  'Keine geeigneten Felder ausgewählt.': 'No suitable tiles selected.',
+  'Wähle einen freien Gang ohne Raumplan.':
+    'Choose an empty corridor without a room plan.',
+  'Schürflinge graben erreichbare Felder aus.':
+    'Delvers excavate reachable tiles.',
+  'Erst graben, dann beanspruchen und bauen. Gold wird je fertigem Feld bezahlt.':
+    'Excavate, then claim and build. Gold is paid for each completed tile.',
+  'Fehlendes Gold stoppt nur den Bau. Der Grabungsauftrag bleibt aktiv.':
+    'A lack of gold only pauses construction. Excavation remains active.',
+  'Gesetzte Aufträge in dieser Fläche entfernen':
+    'Remove placed orders within this area',
+  'Raster ziehen · Nutzung wählen · Enter setzt Auftrag':
+    'Draw grid · Choose use · Enter places order',
+
   Bauplan: 'Construction plan',
   BAUPLAN: 'CONSTRUCTION PLAN',
   'FLÄCHE MARKIEREN': 'DESIGNATE AREA',
@@ -236,8 +276,8 @@ const messages: Record<string, string> = {
     'The Sun March is broken. Your domain has endured.',
   'Bewohner und Räume ansehen. Einen Bewohner wählen, dann mit „Umsetzen“ auf eigenem Boden absetzen.':
     'Inspect creatures and rooms. Select a creature, then use Pick up to move it to claimed ground.',
-  'Markiere Erde oder Gold mit einem Klick oder ziehe ein Rechteck. Schürflinge erledigen erreichbare Aufträge.':
-    'Click earth or gold, or drag a rectangle. Delvers complete reachable orders.',
+  'Ziehe ein Raster über Erde oder Gold. Wähle Nur graben oder einen späteren Raum; Enter setzt den Auftrag.':
+    'Draw a grid over earth or gold. Choose Excavate only or a future room; Enter places the order.',
   'Räume und Verteidigung verkaufen. Du erhältst die Hälfte der Baukosten zurück.':
     'Sell rooms and defences to recover half their construction cost.',
   'Versammle deine Kämpfer auf eigenem Boden. Löse das Banner, damit sie ihren Aufgaben nachgehen.':
@@ -333,8 +373,8 @@ const messages: Record<string, string> = {
     'Kluftkrone is an original dungeon strategy game. Your creatures act independently; you shape their world.',
   'Wähle Graben (2) und markiere Erde oder Gold. Ziehen markiert ganze Flächen. Nur erreichbare Flächen werden abgebaut. Schürflinge beanspruchen den Boden danach automatisch.':
     'Choose Excavate (2) and designate earth or gold. Drag to designate areas. Only reachable tiles are excavated. Delvers then claim the ground automatically.',
-  'Wähle einen Raum und ziehe eine Fläche auf eigenem, freiem Boden. Grün zeigt bebaubare, Rot blockierte Felder. Prüfe die Goldkosten und baue mit Enter; Escape verwirft den Plan. Ruheplätze und mindestens 4 Pilzgarten-Felder ermöglichen neue Bewohner; zwei Ruhefelder bieten einen Platz.':
-    'Select a room and drag an area on claimed, empty ground. Green tiles are buildable, red tiles are blocked. Check the gold cost and press Enter to build; Escape discards the plan. Rest spaces and at least 4 fungal-garden tiles allow new creatures to arrive; every two sanctuary tiles provide one place.',
+  'Ziehe mit Graben oder einem Raumwerkzeug ein Raster über bekanntes Erdreich oder freien Boden. Wähle danach Nur graben oder einen Raum und bestätige mit Enter. Schürflinge graben, beanspruchen und bauen selbstständig; Gold wird erst beim Bau je Feld bezahlt. Aufträge bleiben im Spielstand gespeichert. Ruheplätze und mindestens 4 Pilzgarten-Felder ermöglichen neue Bewohner; zwei Ruhefelder bieten einen Platz.':
+    'Drag a grid over known earth or empty ground using Excavate or a room tool. Choose Excavate only or a future room, then press Enter. Delvers excavate, claim and build automatically; gold is paid per completed tile. Orders are included in saved games. Rest spaces and at least 4 fungal-garden tiles allow new creatures to arrive; every two sanctuary tiles provide one place.',
   'Bewohner suchen Nahrung und Ruhe selbst. Alle 100 Sekunden ist Zahltag. Schürflinge liefern Gold in die Schatzkammer, deren Felder die Lagerkapazität erhöhen.':
     'Creatures find food and rest themselves. Payday occurs every 100 seconds. Delvers deliver gold to the treasury, whose tiles expand storage capacity.',
   'Training kostet Gold und stärkt Kämpfer. Vier Archivfelder locken einen Runenweber. Seine Forschung erschließt Sturmfunken, Fallen, Pforten und die Werkstatt.':
@@ -372,6 +412,10 @@ export function translate(text: string, locale: Locale): string {
   const stripped = text.trim();
   if (messages[stripped]) return text.replace(stripped, messages[stripped]);
   let m: RegExpMatchArray | null;
+  if ((m = text.match(/^Geplant: (.+)$/)))
+    return `Planned: ${translate(m[1], locale)}`;
+  if ((m = text.match(/^Aufträge löschen: (.+)$/)))
+    return `Remove orders: ${translate(m[1], locale)}`;
   if (
     (m = text.match(
       /^(Schürfling|Aschewächter|Runenweber|Basaltkoloss) · (\d+)$/,
