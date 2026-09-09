@@ -1,6 +1,6 @@
 # Kluftkrone — Herrschaft der Tiefe
 
-An original, playable 3D dungeon management game for the browser. German and English HUD, real-time autonomous creatures, a fully playable four-wave expedition and three difficulty levels.
+An original, playable 2.5D dungeon management game for the browser. German and English HUD, real-time autonomous creatures, a fully playable four-wave expedition and three difficulty levels.
 
 **Play:** https://MarcelWeissgerberIT.github.io/dungeon-keeper/
 
@@ -13,7 +13,7 @@ Kindle the ember, designate earth and gold, and let your delvers excavate and cl
 - Healing, lightning, rally orders, three-charge snares and protective gates.
 - Creature pickup, slapping, direct possession and individual creature vocalizations.
 - Original evolving ambient score and spatial effects with **independent music and effects volume/mute controls**.
-- Original stone texture and illustrated room tools; an original display font.
+- OpenArt terrain, four-direction creature sprites, illustrated furnishings and powers, a carved command HUD and original display font.
 - Local autosave every 30 seconds, manual save/load, pause and 1×/2×/3× speed.
 - A German/English language switch. Desktop keyboard/mouse recommended; compact touch HUD supported.
 
@@ -38,4 +38,4 @@ GitHub Actions runs tests, builds and deploys `dist/` to GitHub Pages on pushes 
 
 This release contains one replayable expedition with three difficulty settings and varied resource distribution. It is not the original game's campaign, code, levels or art. See [design and sources](docs/DESIGN.md), [asset provenance](docs/ASSETS.md) and [validation](docs/VALIDATION.md).
 
-The requested OpenArt MCP endpoint was attempted, but its firewall rejected authenticated access. Graphics were therefore generated using the available Imagegen fallback. No OpenArt-generated assets are claimed.
+The current visual set was generated through the authenticated OpenArt MCP connection. Generation identifiers and prompts are recorded in `docs/openart-generations.json`. The initial fallback illustrations have been replaced. No OpenArt credentials or runtime generation calls are shipped in the game.

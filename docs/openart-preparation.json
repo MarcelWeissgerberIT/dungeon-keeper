@@ -1,0 +1,1090 @@
+{
+  "date": "2026-09-09",
+  "preparation": {
+    "creatures": {
+      "rawSize": [
+        2560,
+        2048
+      ],
+      "runtimeSize": [
+        2560,
+        2048
+      ],
+      "grid": [
+        5,
+        4
+      ],
+      "squareCell": 512,
+      "alphaMethod": "strict pure-black matte max(R,G,B)<=1; 3x3 closing; enclosed cavities <=2500 pixels restored; near-black <=18 feather only within 3 pixels of exterior; detached components <25 pixels pruned (<8 for powers); no color edits",
+      "packing": "fit aspect ratio within 88% of square cell; horizontal center; bottom at 95%",
+      "transforms": [
+        {
+          "column": 0,
+          "row": 0,
+          "originalCell": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "globalSpriteBounds": [
+            74,
+            204,
+            421,
+            491
+          ],
+          "scale": 1.298443804034582,
+          "placedBounds": [
+            30,
+            113,
+            481,
+            486
+          ],
+          "footBaseline": 486
+        },
+        {
+          "column": 1,
+          "row": 0,
+          "originalCell": [
+            512,
+            0,
+            1024,
+            512
+          ],
+          "globalSpriteBounds": [
+            591,
+            40,
+            933,
+            502
+          ],
+          "scale": 0.9752380952380952,
+          "placedBounds": [
+            601,
+            35,
+            935,
+            486
+          ],
+          "footBaseline": 486
+        },
+        {
+          "column": 2,
+          "row": 0,
+          "originalCell": [
+            1024,
+            0,
+            1536,
+            512
+          ],
+          "globalSpriteBounds": [
+            1126,
+            76,
+            1407,
+            496
+          ],
+          "scale": 1.0727619047619048,
+          "placedBounds": [
+            1129,
+            35,
+            1430,
+            486
+          ],
+          "footBaseline": 486
+        },
+        {
+          "column": 3,
+          "row": 0,
+          "originalCell": [
+            1536,
+            0,
+            2048,
+            512
+          ],
+          "globalSpriteBounds": [
+            1545,
+            47,
+            2048,
+            523
+          ],
+          "scale": 0.8957455268389662,
+          "placedBounds": [
+            1566,
+            60,
+            2017,
+            486
+          ],
+          "footBaseline": 486
+        },
+        {
+          "column": 4,
+          "row": 0,
+          "originalCell": [
+            2048,
+            0,
+            2560,
+            512
+          ],
+          "globalSpriteBounds": [
+            2163,
+            80,
+            2490,
+            509
+          ],
+          "scale": 1.0502564102564103,
+          "placedBounds": [
+            2132,
+            35,
+            2475,
+            486
+          ],
+          "footBaseline": 486
+        },
+        {
+          "column": 0,
+          "row": 1,
+          "originalCell": [
+            0,
+            512,
+            512,
+            1024
+          ],
+          "globalSpriteBounds": [
+            74,
+            688,
+            397,
+            971
+          ],
+          "scale": 1.394922600619195,
+          "placedBounds": [
+            30,
+            603,
+            481,
+            998
+          ],
+          "footBaseline": 998
+        },
+        {
+          "column": 1,
+          "row": 1,
+          "originalCell": [
+            512,
+            512,
+            1024,
+            1024
+          ],
+          "globalSpriteBounds": [
+            583,
+            521,
+            921,
+            1016
+          ],
+          "scale": 0.9102222222222223,
+          "placedBounds": [
+            614,
+            547,
+            922,
+            998
+          ],
+          "footBaseline": 998
+        },
+        {
+          "column": 2,
+          "row": 1,
+          "originalCell": [
+            1024,
+            512,
+            1536,
+            1024
+          ],
+          "globalSpriteBounds": [
+            1149,
+            551,
+            1383,
+            996
+          ],
+          "scale": 1.0124943820224719,
+          "placedBounds": [
+            1161,
+            547,
+            1398,
+            998
+          ],
+          "footBaseline": 998
+        },
+        {
+          "column": 3,
+          "row": 1,
+          "originalCell": [
+            1536,
+            512,
+            2048,
+            1024
+          ],
+          "globalSpriteBounds": [
+            1535,
+            552,
+            2028,
+            1013
+          ],
+          "scale": 0.9139148073022313,
+          "placedBounds": [
+            1566,
+            577,
+            2017,
+            998
+          ],
+          "footBaseline": 998
+        },
+        {
+          "column": 4,
+          "row": 1,
+          "originalCell": [
+            2048,
+            512,
+            2560,
+            1024
+          ],
+          "globalSpriteBounds": [
+            2088,
+            578,
+            2477,
+            990
+          ],
+          "scale": 1.0935922330097088,
+          "placedBounds": [
+            2091,
+            547,
+            2516,
+            998
+          ],
+          "footBaseline": 998
+        },
+        {
+          "column": 0,
+          "row": 2,
+          "originalCell": [
+            0,
+            1024,
+            512,
+            1536
+          ],
+          "globalSpriteBounds": [
+            95,
+            1126,
+            396,
+            1448
+          ],
+          "scale": 1.399254658385093,
+          "placedBounds": [
+            45,
+            1059,
+            466,
+            1510
+          ],
+          "footBaseline": 1510
+        },
+        {
+          "column": 1,
+          "row": 2,
+          "originalCell": [
+            512,
+            1024,
+            1024,
+            1536
+          ],
+          "globalSpriteBounds": [
+            615,
+            1006,
+            925,
+            1448
+          ],
+          "scale": 1.0193665158371041,
+          "placedBounds": [
+            610,
+            1059,
+            926,
+            1510
+          ],
+          "footBaseline": 1510
+        },
+        {
+          "column": 2,
+          "row": 2,
+          "originalCell": [
+            1024,
+            1024,
+            1536,
+            1536
+          ],
+          "globalSpriteBounds": [
+            1172,
+            1059,
+            1380,
+            1459
+          ],
+          "scale": 1.1264,
+          "placedBounds": [
+            1163,
+            1059,
+            1397,
+            1510
+          ],
+          "footBaseline": 1510
+        },
+        {
+          "column": 3,
+          "row": 2,
+          "originalCell": [
+            1536,
+            1024,
+            2048,
+            1536
+          ],
+          "globalSpriteBounds": [
+            1555,
+            1041,
+            2034,
+            1486
+          ],
+          "scale": 0.9406263048016702,
+          "placedBounds": [
+            1566,
+            1091,
+            2017,
+            1510
+          ],
+          "footBaseline": 1510
+        },
+        {
+          "column": 4,
+          "row": 2,
+          "originalCell": [
+            2048,
+            1024,
+            2560,
+            1536
+          ],
+          "globalSpriteBounds": [
+            2145,
+            1071,
+            2510,
+            1466
+          ],
+          "scale": 1.1406582278481012,
+          "placedBounds": [
+            2096,
+            1059,
+            2512,
+            1510
+          ],
+          "footBaseline": 1510
+        },
+        {
+          "column": 0,
+          "row": 3,
+          "originalCell": [
+            0,
+            1536,
+            512,
+            2048
+          ],
+          "globalSpriteBounds": [
+            84,
+            1601,
+            370,
+            1901
+          ],
+          "scale": 1.5018666666666667,
+          "placedBounds": [
+            41,
+            1571,
+            471,
+            2022
+          ],
+          "footBaseline": 2022
+        },
+        {
+          "column": 1,
+          "row": 3,
+          "originalCell": [
+            512,
+            1536,
+            1024,
+            2048
+          ],
+          "globalSpriteBounds": [
+            610,
+            1494,
+            886,
+            1929
+          ],
+          "scale": 1.0357701149425287,
+          "placedBounds": [
+            625,
+            1571,
+            911,
+            2022
+          ],
+          "footBaseline": 2022
+        },
+        {
+          "column": 2,
+          "row": 3,
+          "originalCell": [
+            1024,
+            1536,
+            1536,
+            2048
+          ],
+          "globalSpriteBounds": [
+            1161,
+            1505,
+            1352,
+            1947
+          ],
+          "scale": 1.0193665158371041,
+          "placedBounds": [
+            1182,
+            1571,
+            1377,
+            2022
+          ],
+          "footBaseline": 2022
+        },
+        {
+          "column": 3,
+          "row": 3,
+          "originalCell": [
+            1536,
+            1536,
+            2048,
+            2048
+          ],
+          "globalSpriteBounds": [
+            1518,
+            1506,
+            2028,
+            1948
+          ],
+          "scale": 0.8834509803921569,
+          "placedBounds": [
+            1566,
+            1632,
+            2017,
+            2022
+          ],
+          "footBaseline": 2022
+        },
+        {
+          "column": 4,
+          "row": 3,
+          "originalCell": [
+            2048,
+            1536,
+            2560,
+            2048
+          ],
+          "globalSpriteBounds": [
+            2118,
+            1537,
+            2465,
+            1931
+          ],
+          "scale": 1.1435532994923858,
+          "placedBounds": [
+            2105,
+            1571,
+            2502,
+            2022
+          ],
+          "footBaseline": 2022
+        }
+      ]
+    },
+    "room-atlas": {
+      "rawSize": [
+        3072,
+        2048
+      ],
+      "runtimeSize": [
+        3072,
+        2048
+      ],
+      "grid": [
+        3,
+        2
+      ],
+      "squareCell": 1024,
+      "alphaMethod": "strict pure-black matte max(R,G,B)<=1; 3x3 closing; enclosed cavities <=2500 pixels restored; near-black <=18 feather only within 3 pixels of exterior; detached components <25 pixels pruned (<8 for powers); no color edits",
+      "packing": "fit aspect ratio within 88% of square cell; horizontal center; bottom at 95%",
+      "transforms": [
+        {
+          "column": 0,
+          "row": 0,
+          "originalCell": [
+            0,
+            0,
+            1024,
+            1024
+          ],
+          "globalSpriteBounds": [
+            83,
+            87,
+            968,
+            894
+          ],
+          "scale": 1.0182146892655368,
+          "placedBounds": [
+            61,
+            151,
+            962,
+            973
+          ],
+          "footBaseline": 973
+        },
+        {
+          "column": 1,
+          "row": 0,
+          "originalCell": [
+            1024,
+            0,
+            2048,
+            1024
+          ],
+          "globalSpriteBounds": [
+            1085,
+            136,
+            2007,
+            906
+          ],
+          "scale": 0.977353579175705,
+          "placedBounds": [
+            1085,
+            220,
+            1986,
+            973
+          ],
+          "footBaseline": 973
+        },
+        {
+          "column": 2,
+          "row": 0,
+          "originalCell": [
+            2048,
+            0,
+            3072,
+            1024
+          ],
+          "globalSpriteBounds": [
+            2107,
+            168,
+            2994,
+            853
+          ],
+          "scale": 1.0159188275084554,
+          "placedBounds": [
+            2109,
+            277,
+            3010,
+            973
+          ],
+          "footBaseline": 973
+        },
+        {
+          "column": 0,
+          "row": 1,
+          "originalCell": [
+            0,
+            1024,
+            1024,
+            2048
+          ],
+          "globalSpriteBounds": [
+            137,
+            964,
+            832,
+            1905
+          ],
+          "scale": 0.9576195536663125,
+          "placedBounds": [
+            179,
+            1096,
+            845,
+            1997
+          ],
+          "footBaseline": 1997
+        },
+        {
+          "column": 1,
+          "row": 1,
+          "originalCell": [
+            1024,
+            1024,
+            2048,
+            2048
+          ],
+          "globalSpriteBounds": [
+            1161,
+            1009,
+            1851,
+            1907
+          ],
+          "scale": 1.0034743875278396,
+          "placedBounds": [
+            1190,
+            1096,
+            1882,
+            1997
+          ],
+          "footBaseline": 1997
+        },
+        {
+          "column": 2,
+          "row": 1,
+          "originalCell": [
+            2048,
+            1024,
+            3072,
+            2048
+          ],
+          "globalSpriteBounds": [
+            2098,
+            897,
+            2993,
+            1887
+          ],
+          "scale": 0.9102222222222223,
+          "placedBounds": [
+            2152,
+            1096,
+            2967,
+            1997
+          ],
+          "footBaseline": 1997
+        }
+      ]
+    },
+    "monuments": {
+      "rawSize": [
+        3808,
+        1632
+      ],
+      "runtimeSize": [
+        4096,
+        1024
+      ],
+      "grid": [
+        4,
+        1
+      ],
+      "squareCell": 1024,
+      "alphaMethod": "strict pure-black matte max(R,G,B)<=1; 3x3 closing; enclosed cavities <=2500 pixels restored; near-black <=18 feather only within 3 pixels of exterior; detached components <25 pixels pruned (<8 for powers); no color edits",
+      "packing": "fit aspect ratio within 88% of square cell; horizontal center; bottom at 95%",
+      "transforms": [
+        {
+          "column": 0,
+          "row": 0,
+          "originalCell": [
+            0,
+            0,
+            952,
+            1632
+          ],
+          "globalSpriteBounds": [
+            51,
+            154,
+            906,
+            1488
+          ],
+          "scale": 0.6755022488755622,
+          "placedBounds": [
+            223,
+            72,
+            801,
+            973
+          ],
+          "footBaseline": 973
+        },
+        {
+          "column": 1,
+          "row": 0,
+          "originalCell": [
+            952,
+            0,
+            1904,
+            1632
+          ],
+          "globalSpriteBounds": [
+            979,
+            39,
+            1875,
+            1537
+          ],
+          "scale": 0.6015487316421896,
+          "placedBounds": [
+            1266,
+            72,
+            1805,
+            973
+          ],
+          "footBaseline": 973
+        },
+        {
+          "column": 2,
+          "row": 0,
+          "originalCell": [
+            1904,
+            0,
+            2856,
+            1632
+          ],
+          "globalSpriteBounds": [
+            1943,
+            179,
+            2805,
+            1449
+          ],
+          "scale": 0.7095433070866142,
+          "placedBounds": [
+            2254,
+            72,
+            2866,
+            973
+          ],
+          "footBaseline": 973
+        },
+        {
+          "column": 3,
+          "row": 0,
+          "originalCell": [
+            2856,
+            0,
+            3808,
+            1632
+          ],
+          "globalSpriteBounds": [
+            2899,
+            777,
+            3757,
+            1472
+          ],
+          "scale": 1.0502564102564103,
+          "placedBounds": [
+            3133,
+            243,
+            4034,
+            973
+          ],
+          "footBaseline": 973
+        }
+      ]
+    },
+    "powers": {
+      "rawSize": [
+        3072,
+        2048
+      ],
+      "runtimeSize": [
+        3072,
+        2048
+      ],
+      "grid": [
+        3,
+        2
+      ],
+      "squareCell": 1024,
+      "alphaMethod": "strict pure-black matte max(R,G,B)<=1; 3x3 closing; enclosed cavities <=2500 pixels restored; near-black <=18 feather only within 3 pixels of exterior; detached components <25 pixels pruned (<8 for powers); no color edits",
+      "packing": "fit aspect ratio within 88% of square cell; horizontal center; bottom at 95%",
+      "transforms": [
+        {
+          "column": 0,
+          "row": 0,
+          "originalCell": [
+            0,
+            0,
+            1024,
+            1024
+          ],
+          "globalSpriteBounds": [
+            54,
+            63,
+            960,
+            975
+          ],
+          "scale": 0.9880701754385965,
+          "placedBounds": [
+            64,
+            72,
+            959,
+            973
+          ],
+          "footBaseline": 973
+        },
+        {
+          "column": 1,
+          "row": 0,
+          "originalCell": [
+            1024,
+            0,
+            2048,
+            1024
+          ],
+          "globalSpriteBounds": [
+            1158,
+            52,
+            1897,
+            979
+          ],
+          "scale": 0.9720819848975188,
+          "placedBounds": [
+            1177,
+            72,
+            1895,
+            973
+          ],
+          "footBaseline": 973
+        },
+        {
+          "column": 2,
+          "row": 0,
+          "originalCell": [
+            2048,
+            0,
+            3072,
+            1024
+          ],
+          "globalSpriteBounds": [
+            2091,
+            23,
+            3021,
+            1001
+          ],
+          "scale": 0.9213905930470347,
+          "placedBounds": [
+            2131,
+            72,
+            2988,
+            973
+          ],
+          "footBaseline": 973
+        },
+        {
+          "column": 0,
+          "row": 1,
+          "originalCell": [
+            0,
+            1024,
+            1024,
+            2048
+          ],
+          "globalSpriteBounds": [
+            74,
+            1018,
+            951,
+            2010
+          ],
+          "scale": 0.9083870967741936,
+          "placedBounds": [
+            113,
+            1096,
+            910,
+            1997
+          ],
+          "footBaseline": 1997
+        },
+        {
+          "column": 1,
+          "row": 1,
+          "originalCell": [
+            1024,
+            1024,
+            2048,
+            2048
+          ],
+          "globalSpriteBounds": [
+            1142,
+            1194,
+            1970,
+            1815
+          ],
+          "scale": 1.0883091787439614,
+          "placedBounds": [
+            1085,
+            1321,
+            1986,
+            1997
+          ],
+          "footBaseline": 1997
+        },
+        {
+          "column": 2,
+          "row": 1,
+          "originalCell": [
+            2048,
+            1024,
+            3072,
+            2048
+          ],
+          "globalSpriteBounds": [
+            2161,
+            1082,
+            3004,
+            1943
+          ],
+          "scale": 1.0465969802555168,
+          "placedBounds": [
+            2119,
+            1096,
+            3001,
+            1997
+          ],
+          "footBaseline": 1997
+        }
+      ]
+    },
+    "cursor": {
+      "rawSize": [
+        2016,
+        1344
+      ],
+      "runtimeSize": [
+        2048,
+        1024
+      ],
+      "grid": [
+        2,
+        1
+      ],
+      "squareCell": 1024,
+      "alphaMethod": "strict pure-black matte max(R,G,B)<=1; 3x3 closing; enclosed cavities <=2500 pixels restored; near-black <=18 feather only within 3 pixels of exterior; detached components <25 pixels pruned (<8 for powers); no color edits",
+      "packing": "fit aspect ratio within 88% of square cell; horizontal center; bottom at 95%",
+      "transforms": [
+        {
+          "column": 0,
+          "row": 0,
+          "originalCell": [
+            0,
+            0,
+            1008,
+            1344
+          ],
+          "globalSpriteBounds": [
+            104,
+            123,
+            975,
+            1170
+          ],
+          "scale": 0.8606685768863419,
+          "placedBounds": [
+            137,
+            72,
+            887,
+            973
+          ],
+          "footBaseline": 973
+        },
+        {
+          "column": 1,
+          "row": 0,
+          "originalCell": [
+            1008,
+            0,
+            2016,
+            1344
+          ],
+          "globalSpriteBounds": [
+            1170,
+            291,
+            1929,
+            1201
+          ],
+          "scale": 0.9902417582417582,
+          "placedBounds": [
+            1160,
+            72,
+            1912,
+            973
+          ],
+          "footBaseline": 973
+        }
+      ]
+    },
+    "floor": {
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "runtimeSize": [
+        1024,
+        1024
+      ],
+      "conversion": "lossless PNG to WebP, no visual edits"
+    },
+    "wall": {
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "runtimeSize": [
+        1024,
+        1024
+      ],
+      "conversion": "lossless PNG to WebP, no visual edits"
+    },
+    "earth": {
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "runtimeSize": [
+        1024,
+        1024
+      ],
+      "conversion": "lossless PNG to WebP, no visual edits"
+    },
+    "gold": {
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "runtimeSize": [
+        1024,
+        1024
+      ],
+      "conversion": "lossless PNG to WebP, no visual edits"
+    },
+    "water": {
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "runtimeSize": [
+        1024,
+        1024
+      ],
+      "conversion": "lossless PNG to WebP, no visual edits"
+    },
+    "hud-stone": {
+      "rawSize": [
+        1344,
+        3136
+      ],
+      "runtimeSize": [
+        1344,
+        3136
+      ],
+      "conversion": "lossless PNG to WebP, no visual edits"
+    },
+    "sanctuary": {
+      "rawSize": [
+        3584,
+        2016
+      ],
+      "runtimeSize": [
+        3584,
+        2016
+      ],
+      "conversion": "lossless PNG to WebP, no visual edits"
+    }
+  },
+  "runtime": "Lossy WebP quality 88 (surfaces) / 90 (sprite sheets), full alpha; PNG cursors. Surfaces1024 wide, HUD672, scenery1536, creatures1920, props/powers1536, monuments2048, cursors64."
+}

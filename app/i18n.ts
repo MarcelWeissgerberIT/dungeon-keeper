@@ -6,6 +6,12 @@ import {
 } from 'react';
 export type Locale = 'de' | 'en';
 const messages: Record<string, string> = {
+  'Dungeon und Bauwerkzeuge': 'Dungeon and building tools',
+  'Vollbild umschalten': 'Toggle fullscreen',
+  'Eine Spielgrafik konnte nicht geladen werden. Bitte lade das Spiel erneut.':
+    'A game graphic could not be loaded. Please reload the game.',
+  'Vollbild ist in diesem Browser nicht verfügbar.':
+    'Fullscreen is unavailable in this browser.',
   'Dein Reich': 'Your domain',
   'Zahltag in': 'Payday in',
   STUFE: 'LEVEL',
@@ -346,6 +352,12 @@ export function translate(text: string, locale: Locale): string {
   const stripped = text.trim();
   if (messages[stripped]) return text.replace(stripped, messages[stripped]);
   let m: RegExpMatchArray | null;
+  if (
+    (m = text.match(
+      /^(Schürfling|Aschewächter|Runenweber|Basaltkoloss) · (\d+)$/,
+    ))
+  )
+    return `${messages[m[1]]} · ${m[2]}`;
   if ((m = text.match(/^(\d+) Gold \/ Feld$/))) return `${m[1]} gold / tile`;
   if ((m = text.match(/^Angriff (\d+) von 4$/))) return `Invasion ${m[1]} of 4`;
   if (

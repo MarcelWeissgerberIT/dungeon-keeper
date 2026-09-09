@@ -1,0 +1,188 @@
+{
+  "product": "Kluftkrone",
+  "date": "2026-09-09",
+  "provider": "https://mcp.openart.ai/mcp",
+  "note": "Original text prompts only; no reference game screenshots uploaded. Older working-title text inside prompts is not rendered in the product.",
+  "generations": [
+    {
+      "name": "floor",
+      "historyId": "bUqTDkxukNdfy4emJR9d",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original dark subterranean strategy game art for our own world EMBERDEEP. Weathered basalt, soot-blackened copper, chipped stone, mineral crusts, rich hand-painted surface detail, chunky readable forms, earthy charcoal and olive-brown palette, restrained amber highlights. Tactile worn inhabited architecture with deep crevice detail. Readable at small game scale. Not photoreal cinematic scenery, not a modern vector icon, not a low-poly model. Original intellectual property: do not reproduce an existing game asset or character. Square seamless tileable material surface texture. Completely flat orthographic material scan, no perspective, no horizon, no objects. Make left/right and top/bottom edges match seamlessly. Moderately LIGHT neutral diffuse albedo so a game engine can tint and illuminate it: preserve midtone surface detail, no crushed black, no baked torchlight, no glow, no directional shadows, no ambient vignette. Natural fine detail and hand-painted tactile game texture. Full frame edge to edge; no border; no text, logo or watermark. Subject: medieval subterranean corridor paving built of MANY SMALL uneven rectangular and irregular basalt cobbles, 8 to 12 stones across the width. Worn gray-brown stone, dusty sand-filled joints, chipped corners and subtle scuffed surfaces. Several softly lighter stone variations, restrained olive and umber undertones, intricate worn surface grain. No individual giant slabs dominating the whole texture.",
+        "imageCount": 1,
+        "resolutionTier": "1k",
+        "aspectRatio": "1:1",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    },
+    {
+      "name": "wall",
+      "historyId": "lNXTfbFgEj6vvBdlMkPD",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original dark subterranean strategy game art for our own world EMBERDEEP. Weathered basalt, soot-blackened copper, chipped stone, mineral crusts, rich hand-painted surface detail, chunky readable forms, earthy charcoal and olive-brown palette, restrained amber highlights. Tactile worn inhabited architecture with deep crevice detail. Readable at small game scale. Not photoreal cinematic scenery, not a modern vector icon, not a low-poly model. Original intellectual property: do not reproduce an existing game asset or character. Square seamless tileable material surface texture. Completely flat orthographic material scan, no perspective, no horizon, no objects. Make left/right and top/bottom edges match seamlessly. Moderately LIGHT neutral diffuse albedo so a game engine can tint and illuminate it: preserve midtone surface detail, no crushed black, no baked torchlight, no glow, no directional shadows, no ambient vignette. Natural fine detail and hand-painted tactile game texture. Full frame edge to edge; no border; no text, logo or watermark. Subject: the front surface of a fortified medieval basalt masonry wall. Six irregular horizontal courses of broad chunky blocks, 4 to 6 blocks across each course. Light neutral warm gray stone faces, deep narrow mortar joints, fractured edges, mineral crusts, old chisel marks, a few tiny moss traces. Heavy old excavated architecture, carefully painted material grain. No carved symbols, no arches, no door, no torch.",
+        "imageCount": 1,
+        "resolutionTier": "1k",
+        "aspectRatio": "1:1",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    },
+    {
+      "name": "earth",
+      "historyId": "OnwWU1qZ3V47DnbhzZxA",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original dark subterranean strategy game art for our own world EMBERDEEP. Weathered basalt, soot-blackened copper, chipped stone, mineral crusts, rich hand-painted surface detail, chunky readable forms, earthy charcoal and olive-brown palette, restrained amber highlights. Tactile worn inhabited architecture with deep crevice detail. Readable at small game scale. Not photoreal cinematic scenery, not a modern vector icon, not a low-poly model. Original intellectual property: do not reproduce an existing game asset or character. Square seamless tileable material surface texture. Completely flat orthographic material scan, no perspective, no horizon, no objects. Make left/right and top/bottom edges match seamlessly. Moderately LIGHT neutral diffuse albedo so a game engine can tint and illuminate it: preserve midtone surface detail, no crushed black, no baked torchlight, no glow, no directional shadows, no ambient vignette. Natural fine detail and hand-painted tactile game texture. Full frame edge to edge; no border; no text, logo or watermark. Subject: exposed subterranean earth and rough unhewn rock wall material, crumbly gray-brown compacted clay, layered mineral soil, irregular embedded small stones, fractured slate seams, fine roots extremely sparse. Dense varied tactile geology with readable medium-scale rock chunks and small gravel, not a flat noise texture. No paving, no masonry courses, no plants, no tunnel.",
+        "imageCount": 1,
+        "resolutionTier": "1k",
+        "aspectRatio": "1:1",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    },
+    {
+      "name": "gold",
+      "historyId": "F2CqSit46TdAG10S5Xgy",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original dark subterranean strategy game art for our own world EMBERDEEP. Weathered basalt, soot-blackened copper, chipped stone, mineral crusts, rich hand-painted surface detail, chunky readable forms, earthy charcoal and olive-brown palette, restrained amber highlights. Tactile worn inhabited architecture with deep crevice detail. Readable at small game scale. Not photoreal cinematic scenery, not a modern vector icon, not a low-poly model. Original intellectual property: do not reproduce an existing game asset or character. Square seamless tileable material surface texture. Completely flat orthographic material scan, no perspective, no horizon, no objects. Make left/right and top/bottom edges match seamlessly. Moderately LIGHT neutral diffuse albedo so a game engine can tint and illuminate it: preserve midtone surface detail, no crushed black, no baked torchlight, no glow, no directional shadows, no ambient vignette. Natural fine detail and hand-painted tactile game texture. Full frame edge to edge; no border; no text, logo or watermark. Subject: rough neutral gray-brown underground bedrock embedded with distinctive rich metallic gold ore veins and broken nuggets. Branching irregular mustard-gold seams and medium angular ore flecks cover about one quarter of surface. Gold is a natural metallic mineral under diffuse lighting, NO magical glow, NO lava or orange fire. Readable gold seams at small game scale, tactile ore set deep in fractured slate.",
+        "imageCount": 1,
+        "resolutionTier": "1k",
+        "aspectRatio": "1:1",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    },
+    {
+      "name": "hud-stone",
+      "historyId": "580RXJrYzMtjdnUkWplV",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original dark subterranean strategy game art for our own world EMBERDEEP. Weathered basalt, soot-blackened copper, chipped stone, mineral crusts, rich hand-painted surface detail, chunky readable forms, earthy charcoal and olive-brown palette, restrained amber highlights. Tactile worn inhabited architecture with deep crevice detail. Readable at small game scale. Not photoreal cinematic scenery, not a modern vector icon, not a low-poly model. Original intellectual property: do not reproduce an existing game asset or character. Asset: tall vertical rectangular user-interface backing material, portrait 9:21. A single worn dark carved basalt slab with a very thin irregular weathered copper inlay along its far left and right perimeter and subtly reinforced upper and lower corners. Center 80 percent is a calm dark charcoal stone surface, low contrast and nearly plain, suitable for readable controls over it. Rich tactile chips, soot, shallow incised abstract mineral geometry ONLY at outer edges. Flat front-on orthographic view, fills canvas, no perspective. No cutouts, no button shapes, no slots, no text, no symbols, no portrait, no inset pictures, no logo, no watermark. Muted warm dark stone and antique copper, no blue lighting.",
+        "imageCount": 1,
+        "resolutionTier": "2k",
+        "aspectRatio": "9:21",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    },
+    {
+      "name": "creatures",
+      "historyId": "j4ff7z6fVohssdqhkwq0",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original dark subterranean strategy game art for our own world EMBERDEEP. Weathered basalt, soot-blackened copper, chipped stone, mineral crusts, rich hand-painted surface detail, chunky readable forms, earthy charcoal and olive-brown palette, restrained amber highlights. Tactile worn inhabited architecture with deep crevice detail. Readable at small game scale. Not photoreal cinematic scenery, not a modern vector icon, not a low-poly model. Original intellectual property: do not reproduce an existing game asset or character. Asset: a precise production sprite atlas with EXACTLY FIVE columns and FOUR rows, total TWENTY full-body character sprites. Columns are five different original creatures; each row shows those SAME five character identities rotated in a different direction. Column 1: small hunched stone-skinned mine worker with enormous copper pickaxe and leather tool satchel, triangular narrow silhouette. Column 2: broad ash-gray armored guard with battered bronze shoulderplates, closed angular helmet and short heavy spear, sturdy upright silhouette. Column 3: very slim hooded rune scholar in asymmetrical faded violet robes with a small teal crystal staff, tall narrow silhouette. Column 4: huge squat basalt golem, heavy blocklike arms and amber cracks, no weapon, massive silhouette. Column 5: pale humanlike dungeon invader in ivory cloth and dull silver plate with muted ochre scarf and sword, slender upright silhouette. ROW 1: each character faces southeast, down-right toward viewer. ROW 2: faces southwest, down-left toward viewer. ROW 3: faces northeast, up-right away from viewer, backs visible. ROW 4: faces northwest, up-left away from viewer, backs visible. These are FOUR distinct direction views, not animation stages. Same creature design, clothes, proportions and equipment across all four views of its column. Feet on consistent baseline inside each cell. All twenty equal-size cells are centered at 10%,30%,50%,70%,90% of image width and 12.5%,37.5%,62.5%,87.5% of image height. Leave 15 percent empty padding within EVERY cell. Workers visibly smaller than guards and golems within the same cell size. No sprite crosses a cell edge. Consistent orthographic isometric game camera looking down about 50 degrees; every object has the same camera angle and soft top-left diffuse lighting. Ground-contact base near the bottom of its cell. Complete objects comfortably inside each cell, with substantial empty separation. PNG with a truly transparent alpha background, isolated complete silhouettes. If the image system cannot output real alpha, use an absolutely uniform solid pure black RGB 0,0,0 background as an extraction matte, NEVER a checkerboard, gradient, landscape, floor plate, cast shadow or vignette. Keep all exterior background perfectly uniform. No labels, letters, captions, grid lines, frames, watermarks or UI text.",
+        "imageCount": 1,
+        "resolutionTier": "4k",
+        "aspectRatio": "5:4",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    },
+    {
+      "name": "room-atlas",
+      "historyId": "ldc3S9QNORCcKE5MQ6p0",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original dark subterranean strategy game art for our own world EMBERDEEP. Weathered basalt, soot-blackened copper, chipped stone, mineral crusts, rich hand-painted surface detail, chunky readable forms, earthy charcoal and olive-brown palette, restrained amber highlights. Tactile worn inhabited architecture with deep crevice detail. Readable at small game scale. Not photoreal cinematic scenery, not a modern vector icon, not a low-poly model. Original intellectual property: do not reproduce an existing game asset or character. Asset: precise SIX-object sprite atlas, EXACTLY THREE columns by TWO rows, equal cells with generous empty margins. Upper-left: overflowing asymmetrical patinated copper treasury chest, heavy lids, irregular gold coin piles, NO skull face. Upper-middle: low rough stone sleeping hollow with thick rust-violet fur blankets, rolled leather pillow and a tiny hide bundle. Upper-right: productive mushroom food bed, chunky stone trough containing several clusters of pale yellow-green edible mushrooms, brown earth and wooden bucket. Lower-left: battered timber combat-training post with hanging iron targets, straw wrapping and a faded red pennant. Lower-middle: crooked basalt research lectern with open thick manuscript and small teal crystal array, abstract non-readable strokes on paper. Lower-right: compact smoky forge arrangement with heavy iron anvil, soot-black copper furnace, faint orange coals and two tools. Keep every object visually distinct, rich in hand-painted tactile detail and immediately readable as game objects. All six props fully fit within their individual cells and share scale. Consistent orthographic isometric game camera looking down about 50 degrees; every object has the same camera angle and soft top-left diffuse lighting. Ground-contact base near the bottom of its cell. Complete objects comfortably inside each cell, with substantial empty separation. PNG with a truly transparent alpha background, isolated complete silhouettes. If the image system cannot output real alpha, use an absolutely uniform solid pure black RGB 0,0,0 background as an extraction matte, NEVER a checkerboard, gradient, landscape, floor plate, cast shadow or vignette. Keep all exterior background perfectly uniform. No labels, letters, captions, grid lines, frames, watermarks or UI text.",
+        "imageCount": 1,
+        "resolutionTier": "4k",
+        "aspectRatio": "3:2",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    },
+    {
+      "name": "monuments",
+      "historyId": "aNlQjHbmRJCdCFxqKLz2",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original dark subterranean strategy game art for our own world EMBERDEEP. Weathered basalt, soot-blackened copper, chipped stone, mineral crusts, rich hand-painted surface detail, chunky readable forms, earthy charcoal and olive-brown palette, restrained amber highlights. Tactile worn inhabited architecture with deep crevice detail. Readable at small game scale. Not photoreal cinematic scenery, not a modern vector icon, not a low-poly model. Original intellectual property: do not reproduce an existing game asset or character. Asset: FOUR isolated monumental dungeon props in one horizontal row, exactly four equally wide cells. Cell 1 from left: original dungeon power core, an irregular squat hexagonal coal furnace of basalt and oxidized copper with a rough faceted emberstone floating just above its chimney, amber inner fire; unique industrial ritual machinery, not a heart or biological object. Cell 2: mineral rift portal, a tall asymmetric jagged slate arch with copper braces and thin teal magical fissure within; the base is heavy rock, complete full-height arch. Cell 3: strong closed reinforced dungeon door, rough black wood and riveted copper bands set in a chipped basalt frame; narrow and tall, visibly a gate. Cell 4: floor trap mechanism, a shallow angular iron ring containing small mechanical teeth and one amber central mineral stud, low squat silhouette. Exactly four objects, correctly ordered and centered with generous empty margins. No common floor tile under them. Consistent orthographic isometric game camera looking down about 50 degrees; every object has the same camera angle and soft top-left diffuse lighting. Ground-contact base near the bottom of its cell. Complete objects comfortably inside each cell, with substantial empty separation. PNG with a truly transparent alpha background, isolated complete silhouettes. If the image system cannot output real alpha, use an absolutely uniform solid pure black RGB 0,0,0 background as an extraction matte, NEVER a checkerboard, gradient, landscape, floor plate, cast shadow or vignette. Keep all exterior background perfectly uniform. No labels, letters, captions, grid lines, frames, watermarks or UI text.",
+        "imageCount": 1,
+        "resolutionTier": "4k",
+        "aspectRatio": "21:9",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    },
+    {
+      "name": "sanctuary",
+      "historyId": "nWa3P5MeSiP1HGH2k5Lk",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original dark subterranean strategy game art for our own world EMBERDEEP. Weathered basalt, soot-blackened copper, chipped stone, mineral crusts, rich hand-painted surface detail, chunky readable forms, earthy charcoal and olive-brown palette, restrained amber highlights. Tactile worn inhabited architecture with deep crevice detail. Readable at small game scale. Not photoreal cinematic scenery, not a modern vector icon, not a low-poly model. Original intellectual property: do not reproduce an existing game asset or character. Asset: finished full-frame widescreen game title backdrop, dark atmospheric painted environment. An excavated immense underground basalt fortress seen close through a rough cave arch. Layered corridors, heavy uneven block walls, copper machinery, worker bridges and descending stairs form a coherent inhabited place. Center-right, a unique squat industrial ritual furnace supports a hovering rough amber emberstone, creating a warm local light pool; much smaller and more rugged than a monumental smooth crystal tower. Tiny hooded stone miners carry tools for scale. Deep charcoal and olive-brown stone, soot-black copper, restrained teal mushroom light in distant fissures, atmospheric dust and small embers. Keep left third darker and calm enough for later title overlay. Premium richly hand-painted game key art with tactile architectural detail, cinematic depth but gritty old-world material character. Absolutely no text, no title, no logo, no watermark, no interface or frame. Original scene, no reused game imagery.",
+        "imageCount": 1,
+        "resolutionTier": "4k",
+        "aspectRatio": "16:9",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    },
+    {
+      "name": "powers",
+      "historyId": "n75c3m06SVCqY9vVLBDC",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original dark subterranean strategy game art for our own world EMBERDEEP. Weathered basalt, soot-blackened copper, chipped stone, mineral crusts, rich hand-painted surface detail, chunky readable forms, earthy charcoal and olive-brown palette, restrained amber highlights. Tactile worn inhabited architecture with deep crevice detail. Readable at small game scale. Not photoreal cinematic scenery, not a modern vector icon, not a low-poly model. Original intellectual property: do not reproduce an existing game asset or character. Asset: EXACTLY SIX separate square game spell/tool icons in a strict THREE-column TWO-row sprite atlas, no frames, equal cells with wide empty gaps. Upper-left: a jagged small amber stone miner silhouette emerging from a summoning ring of ash, a copper pickaxe clearly visible. Upper-middle: a luminous teal healing crystal bound by gently curling pale green energy ribbons. Upper-right: branching amber lightning striking a pointed dark stone prism. Lower-left: a battered ochre rally pennant attached to a copper-tipped spear and a small circular signal glow. Lower-middle: a compact sprung iron trap with angular teeth and dark copper trigger. Lower-right: a compact reinforced iron-and-stone door icon with clear closed slabs. Distinct broad graphic silhouettes but richly painted tactile surfaces, readable when reduced to 48 pixels. Not a UI mockup. No lettering. PNG with a truly transparent alpha background, isolated complete silhouettes. If the image system cannot output real alpha, use an absolutely uniform solid pure black RGB 0,0,0 background as an extraction matte, NEVER a checkerboard, gradient, landscape, floor plate, cast shadow or vignette. Keep all exterior background perfectly uniform. No labels, letters, captions, grid lines, frames, watermarks or UI text.",
+        "imageCount": 1,
+        "resolutionTier": "4k",
+        "aspectRatio": "3:2",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    },
+    {
+      "name": "cursor",
+      "historyId": "UJTKzMSxD6cquzfWhPd1",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original dark subterranean strategy game art for our own world EMBERDEEP. Weathered basalt, soot-blackened copper, chipped stone, mineral crusts, rich hand-painted surface detail, chunky readable forms, earthy charcoal and olive-brown palette, restrained amber highlights. Tactile worn inhabited architecture with deep crevice detail. Readable at small game scale. Not photoreal cinematic scenery, not a modern vector icon, not a low-poly model. Original intellectual property: do not reproduce an existing game asset or character. Asset: TWO separate original game cursor hand sprites in one horizontal row, exactly two equal cells with wide empty gaps. The same weathered obsidian-and-copper articulated gauntlet in both cells, chunky clear shape, angular copper knuckles, rough stone plates, worn leather seams, no flesh or gore. Left cell: open reaching claw hand with five clearly separated fingers, index fingertip near upper-left, palm facing partly toward viewer. Right cell: a pinching fist, thumb and index bent together while other fingers curl, holding nothing. Hands shown from back/three-quarter, wrist extending lower-right. Highly readable silhouette, enough warm edge accents to read over a dark game. Complete hand and short wrist contained well inside each cell. No arm or body. PNG with a truly transparent alpha background, isolated complete silhouettes. If the image system cannot output real alpha, use an absolutely uniform solid pure black RGB 0,0,0 background as an extraction matte, NEVER a checkerboard, gradient, landscape, floor plate, cast shadow or vignette. Keep all exterior background perfectly uniform. No labels, letters, captions, grid lines, frames, watermarks or UI text.",
+        "imageCount": 1,
+        "resolutionTier": "2k",
+        "aspectRatio": "3:2",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    },
+    {
+      "name": "water",
+      "historyId": "zDabzxWTYRzzzN6fgMUZ",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "prompt": "Original seamless tileable top-down material texture of deep subterranean water, dark muted teal and blue-green undertones, small natural ripples and faint oily mineral reflections. Rich carefully hand-painted strategy game surface texture, calm dark water in a basalt cavern. Flat orthographic view with no perspective, no horizon, no banks, no rocks, no objects or creatures. Even diffuse neutral illumination, restrained midtone highlights that can be tinted and lit by a game engine; no baked torch or sun reflections, no caustic beams, no vignette. Edge-to-edge water only, left and right edges and upper and lower edges must match seamlessly. No text, no logos, no watermark, no border. Original game material, never copied existing graphics.",
+        "imageCount": 1,
+        "resolutionTier": "1k",
+        "aspectRatio": "1:1",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false
+      }
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   SIZE,
   idx,
@@ -34,8 +35,8 @@ export function mountScene(
   options: SceneOptions,
 ): SceneControls {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#0b1114');
-  scene.fog = new THREE.FogExp2('#0c1216', 0.019);
+  scene.background = new THREE.Color('#080706');
+  scene.fog = new THREE.FogExp2('#0b0907', 0.011);
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
     alpha: false,
@@ -43,10 +44,10 @@ export function mountScene(
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.35;
+  renderer.toneMappingExposure = 1.12;
   renderer.domElement.setAttribute(
     'aria-label',
     'Dreidimensionale Dungeon-Karte. Ziehen zum Markieren, rechte Maustaste zum Drehen.',
@@ -57,13 +58,13 @@ export function mountScene(
   const eye = new THREE.PerspectiveCamera(68, 1, 0.08, 100);
   let target = new THREE.Vector3(13, 0, 14),
     angle = Math.PI / 4,
-    elevation = 0.84,
-    scale = 16,
+    elevation = 1.04,
+    scale = 13.5,
     possessed: number | null = null,
     lookAngle = 0,
     lookPitch = 0;
-  scene.add(new THREE.HemisphereLight('#b7cfdf', '#413329', 2.2));
-  const sun = new THREE.DirectionalLight('#f5d2ad', 3.8);
+  scene.add(new THREE.HemisphereLight('#b7ada0', '#282016', 1.4));
+  const sun = new THREE.DirectionalLight('#eace9d', 2.2);
   sun.position.set(8, 25, 4);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -80,41 +81,43 @@ export function mountScene(
   scene.add(sun);
   scene.add(sun.target);
   sun.target.position.set(13, 0, 13);
-  const rim = new THREE.DirectionalLight('#65bfc7', 2.2);
+  const rim = new THREE.DirectionalLight('#83968d', 0.65);
   rim.position.set(25, 12, 20);
   scene.add(rim);
-  const cube = new THREE.BoxGeometry(1, 1, 1),
+  const cube = new RoundedBoxGeometry(1, 1, 1, 1, 0.035),
+    slab = new THREE.BoxGeometry(1, 1, 1),
     cylinder = new THREE.CylinderGeometry(1, 1, 1, 8),
     sphere = new THREE.IcosahedronGeometry(1, 1),
     cone = new THREE.ConeGeometry(1, 1, 6),
     octa = new THREE.OctahedronGeometry(1),
     torus = new THREE.TorusGeometry(1, 0.08, 6, 32);
-  const floorTexture = new THREE.TextureLoader().load(
-    import.meta.env.BASE_URL + 'art/basalt.webp',
-  );
-  floorTexture.colorSpace = THREE.SRGBColorSpace;
-  floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-  floorTexture.anisotropy = Math.min(
-    8,
-    renderer.capabilities.getMaxAnisotropy(),
-  );
+  const textureLoader = new THREE.TextureLoader();
+  const surfaceTextures = new Map<string, THREE.Texture>();
+  for (const name of ['floor', 'wall', 'earth', 'gold', 'water']) {
+    const texture = textureLoader.load(
+      import.meta.env.BASE_URL + `art/openart/${name}.webp`,
+    );
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    if (name === 'wall') texture.repeat.set(0.33, 0.2);
+    if (name === 'earth' || name === 'gold') texture.repeat.set(0.5, 0.34);
+    texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    surfaceTextures.set(name, texture);
+  }
   const materials = new Map<string, THREE.MeshStandardMaterial>();
-  const mat = (color: string, emission = 0, metal = 0) => {
-    const key = color + emission + metal;
+  const mat = (color: string, emission = 0, metal = 0, surface = '') => {
+    const key = color + emission + metal + surface;
     if (!materials.has(key)) {
-      const tint = new THREE.Color(color),
-        hsl = { h: 0, s: 0, l: 0 };
-      tint.getHSL(hsl);
-      const stone = emission === 0 && metal === 0 && hsl.s < 0.25;
-      if (stone) tint.multiplyScalar(1.9);
+      const tint = new THREE.Color(color);
+      const texture = surfaceTextures.get(surface) ?? null;
       materials.set(
         key,
         new THREE.MeshStandardMaterial({
           color: tint,
-          map: stone ? floorTexture : null,
-          bumpMap: stone ? floorTexture : null,
-          bumpScale: 0.065,
-          roughness: metal ? 0.45 : 0.93,
+          map: texture,
+          bumpMap: texture,
+          bumpScale: 0.11,
+          roughness: metal ? 0.63 : 0.97,
           metalness: metal,
           emissive: color,
           emissiveIntensity: emission,
@@ -123,6 +126,112 @@ export function mountScene(
     }
     return materials.get(key)!;
   };
+  const atlasTextures: THREE.Texture[] = [];
+  let reportedAssetError = false;
+  const atlasSources = new Map<string, THREE.Texture>();
+  const atlasWaiters = new Map<
+    string,
+    Array<(texture: THREE.Texture) => void>
+  >();
+  const spriteMaterials = new Map<string, THREE.SpriteMaterial>();
+  function atlasMaterial(
+    name: string,
+    cols: number,
+    rows: number,
+    col: number,
+    row: number,
+  ) {
+    const key = `${name}:${col}:${row}`;
+    if (!spriteMaterials.has(key)) {
+      const material = new THREE.SpriteMaterial({
+        color: '#ece0cd',
+        transparent: true,
+        alphaTest: 0.08,
+        depthWrite: true,
+        fog: true,
+        toneMapped: false,
+        opacity: 0,
+      });
+      spriteMaterials.set(key, material);
+      const attach = (source: THREE.Texture) => {
+        const texture = source.clone();
+        texture.repeat.set(1 / cols, 1 / rows);
+        texture.offset.set(col / cols, 1 - (row + 1) / rows);
+        texture.needsUpdate = true;
+        atlasTextures.push(texture);
+        material.map = texture;
+        material.opacity = 1;
+        material.needsUpdate = true;
+      };
+      let source = atlasSources.get(name);
+      if (!source) {
+        atlasWaiters.set(name, []);
+        source = textureLoader.load(
+          import.meta.env.BASE_URL + `art/openart/${name}.webp`,
+          (loaded) => {
+            atlasWaiters.get(name)?.forEach((callback) => callback(loaded));
+            atlasWaiters.delete(name);
+          },
+          undefined,
+          () => {
+            if (!reportedAssetError) {
+              reportedAssetError = true;
+              options.onError(
+                'Eine Spielgrafik konnte nicht geladen werden. Bitte lade das Spiel erneut.',
+              );
+            }
+          },
+        );
+        source.colorSpace = THREE.SRGBColorSpace;
+        atlasSources.set(name, source);
+      }
+      if (source.image && (source.image as HTMLImageElement).naturalWidth > 0)
+        attach(source);
+      else atlasWaiters.get(name)?.push(attach);
+    }
+    return spriteMaterials.get(key)!;
+  }
+  function illustration(
+    name: string,
+    cols: number,
+    rows: number,
+    col: number,
+    row: number,
+    x: number,
+    y: number,
+    z: number,
+    width: number,
+    height: number,
+    parent: THREE.Object3D,
+  ) {
+    const sprite = new THREE.Sprite(atlasMaterial(name, cols, rows, col, row));
+    sprite.center.set(0.5, 0.05);
+    sprite.position.set(x, y, z);
+    sprite.scale.set(width, height, 1);
+    parent.add(sprite);
+    return sprite;
+  }
+  const shadowGeometry = new THREE.CircleGeometry(1, 24);
+  const shadowMaterial = new THREE.MeshBasicMaterial({
+    color: '#070503',
+    transparent: true,
+    opacity: 0.35,
+    depthWrite: false,
+  });
+  function contactShadow(
+    x: number,
+    z: number,
+    width: number,
+    parent: THREE.Object3D,
+  ) {
+    const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.set(x, 0.085, z);
+    shadow.scale.set(width, width * 0.65, 1);
+    parent.add(shadow);
+  }
+  const furnishings = new THREE.Group();
+  scene.add(furnishings);
   const terrain = new THREE.Group();
   scene.add(terrain);
   const props = new THREE.Group();
@@ -157,12 +266,13 @@ export function mountScene(
     rot = 0,
     emission = 0,
     metal = 0,
+    surface = '',
   ) {
-    const key = g.uuid + c + emission + metal;
+    const key = g.uuid + c + emission + metal + surface;
     if (!buckets.has(key))
       buckets.set(key, {
         geometry: g,
-        material: mat(c, emission, metal),
+        material: mat(c, emission, metal, surface),
         matrices: [],
       });
     dummy.position.set(x, y, z);
@@ -190,7 +300,14 @@ export function mountScene(
     const n = Math.sin(x * 127.1 + z * 311.7 + k * 73.9) * 43758.5453123;
     return n - Math.floor(n);
   }
+  const torchLights = Array.from({ length: 5 }, () => {
+    const light = new THREE.PointLight('#f59b3c', 0, 4.8, 2);
+    scene.add(light);
+    return light;
+  });
+  const torchPositions: THREE.Vector3[] = [];
   let revision = -1;
+  let renderedState: GameState | null = null;
   function rebuild() {
     const s = options.state();
     revision = s.revision;
@@ -198,6 +315,8 @@ export function mountScene(
       if (o instanceof THREE.InstancedMesh) o.dispose();
     });
     terrain.clear();
+    furnishings.clear();
+    torchPositions.length = 0;
     buckets.clear();
     for (const t of s.tiles) {
       const { x, z } = t;
@@ -210,41 +329,67 @@ export function mountScene(
           [x, z - 1],
           [x, z + 1],
         ].some(([a, b]) => inBounds(a, b) && walkable(s.tiles[idx(a, b)]));
-        let h = t.kind === 'rock' ? 1.85 : 1.28 + r * 0.22;
-        const colors =
-          t.kind === 'rock'
-            ? ['#2d3740', '#354047', '#414a50']
-            : t.kind === 'gold'
-              ? ['#696044', '#60543a', '#76633e']
-              : ['#45423e', '#504b44', '#3f4241', '#575046'];
+        const h = t.kind === 'rock' ? 1.6 + r * 0.2 : 1.18 + r * 0.18;
+        const surface =
+          t.kind === 'gold' ? 'gold' : t.kind === 'rock' ? 'wall' : 'earth';
         const color = t.seen
-          ? colors[Math.floor(r * colors.length)]
-          : '#232b30';
-        add(cube, color, x, h / 2 - 0.1, z, 0.98, h, 0.98);
+          ? t.kind === 'gold'
+            ? '#e7bd72'
+            : '#b0a58f'
+          : '#25231e';
+        // Dark mortar sits behind separate worn courses, breaking the perfect cube silhouette.
+        add(cube, '#17140f', x, h / 2 - 0.12, z, 0.995, h, 0.995);
         if (t.seen) {
+          if (exposed) {
+            for (let row = 0; row < 3; row++) {
+              for (let col = 0; col < 2; col++) {
+                const j = row * 2 + col;
+                add(
+                  cube,
+                  color,
+                  x + (col - 0.5) * 0.496,
+                  (h * (row + 0.5)) / 3 - 0.1,
+                  z,
+                  0.487,
+                  h / 3 - 0.028,
+                  1.01 + seeded(x, z, j) * 0.025,
+                  (seeded(x, z, j + 9) - 0.5) * 0.025,
+                  0,
+                  0,
+                  surface,
+                );
+              }
+            }
+          } else {
+            add(
+              cube,
+              color,
+              x,
+              h / 2 - 0.1,
+              z,
+              0.985,
+              h,
+              0.985,
+              0,
+              0,
+              0,
+              surface,
+            );
+          }
           add(
             cube,
-            t.kind === 'gold' ? '#897044' : '#62605a',
+            '#9d917b',
             x,
-            h - 0.015,
+            h - 0.035,
             z,
-            0.965,
-            0.09,
-            0.965,
+            1.035,
+            0.15,
+            1.035,
+            r * 0.025,
+            0,
+            0,
+            surface,
           );
-          if (exposed) {
-            for (let b = 0; b < 3; b++)
-              add(
-                cube,
-                color,
-                x + 0.014,
-                (h * (b + 0.5)) / 3 - 0.1,
-                z,
-                1.01,
-                h / 3 - 0.035,
-                1.01,
-              );
-          }
           if (t.kind === 'gold')
             for (let j = 0; j < 4; j++)
               add(
@@ -274,197 +419,143 @@ export function mountScene(
             );
         }
       } else if (t.kind === 'water') {
-        add(cube, '#174148', x, -0.05, z, 0.98, 0.1, 0.98, 0, 0.28, 0.5);
+        add(
+          cube,
+          '#659e98',
+          x,
+          -0.05,
+          z,
+          0.999,
+          0.1,
+          0.999,
+          0,
+          0.08,
+          0.4,
+          'water',
+        );
         if (r > 0.8) add(octa, '#69aa9c', x, 0.14, z, 0.09, 0.2, 0.1, 0, 0.7);
       } else {
         const color = t.room
           ? ROOMS[t.room].color
           : t.owned
-            ? '#666459'
-            : '#414744';
-        const c = new THREE.Color(color).multiplyScalar(t.room ? 0.6 : 0.75);
-        add(cube, '#' + c.getHexString(), x, -0.04, z, 0.975, 0.18, 0.975);
+            ? '#aba18a'
+            : '#797566';
+        add(slab, '#211d16', x, -0.08, z, 0.995, 0.16, 0.995);
+        // The generated texture supplies small cobbles within each continuous floor field.
+        const tint = new THREE.Color(color)
+          .lerp(new THREE.Color('#b0a28b'), t.room ? 0.58 : 0.12)
+          .multiplyScalar(0.88 + Math.floor(seeded(x, z, 7) * 3) * 0.07);
         add(
-          cube,
-          t.owned ? '#85816e' : '#545753',
+          slab,
+          '#' + tint.getHexString(),
           x,
-          0.055,
+          0.015,
           z,
-          0.88,
-          0.045,
-          0.88,
+          0.995,
+          0.08,
+          0.995,
+          0,
+          0,
+          0,
+          'floor',
         );
         if (t.room) {
           const rc = ROOMS[t.room].color;
-          add(
-            cube,
-            '#' + new THREE.Color(rc).multiplyScalar(0.55).getHexString(),
-            x,
-            0.09,
-            z,
-            0.8,
-            0.04,
-            0.8,
-          );
+          // Ornament only the room perimeter, so adjacent fields form a room rather than trays.
           for (const [dx, dz] of [
-            [-0.44, 0],
-            [0.44, 0],
-            [0, -0.44],
-            [0, 0.44],
-          ])
+            [-1, 0],
+            [1, 0],
+            [0, -1],
+            [0, 1],
+          ]) {
+            const n = inBounds(x + dx, z + dz)
+              ? s.tiles[idx(x + dx, z + dz)]
+              : null;
+            if (n?.room === t.room) continue;
             add(
               cube,
               rc,
-              x + dx,
-              0.1,
-              z + dz,
-              dx ? 0.025 : 0.85,
-              0.025,
-              dz ? 0.025 : 0.85,
+              x + dx * 0.46,
+              0.075,
+              z + dz * 0.46,
+              dx ? 0.045 : 0.94,
+              0.06,
+              dz ? 0.045 : 0.94,
               0,
-              0.05,
+              0,
+              0.2,
             );
-          if (t.room === 'vault') {
-            add(cube, '#493824', x, 0.21, z, 0.66, 0.27, 0.5);
-            add(cube, '#775b35', x, 0.37, z - 0.23, 0.65, 0.29, 0.09);
-            for (const dx of [-0.26, 0.26]) {
-              add(
-                cube,
-                '#b08e4c',
-                x + dx,
-                0.24,
-                z,
-                0.065,
-                0.29,
-                0.52,
-                0,
-                0,
-                0.65,
-              );
-              add(
-                cube,
-                '#b08e4c',
-                x + dx,
-                0.47,
-                z - 0.23,
-                0.065,
-                0.15,
-                0.12,
-                0,
-                0,
-                0.65,
-              );
-            }
-            for (let j = 0; j < 5; j++)
-              add(
-                cylinder,
-                j % 2 ? '#ddae50' : '#ba852e',
-                x + ((j % 3) - 1) * 0.18,
-                0.42 + Math.floor(j / 3) * 0.07,
-                z + ((j % 2) - 0.5) * 0.17,
-                0.13,
-                0.09,
-                0.13,
-                0,
-                0.04,
-                0.7,
-              );
           }
-          if (t.room === 'rest') {
-            add(cube, '#49484a', x, 0.18, z, 0.75, 0.22, 0.8);
-            add(cube, '#554559', x, 0.31, z, 0.62, 0.12, 0.69);
-            add(cube, '#836988', x, 0.39, z + 0.06, 0.58, 0.065, 0.5);
-            add(cube, '#b3a79a', x, 0.42, z - 0.23, 0.48, 0.12, 0.17);
-            add(cube, '#615c55', x, 0.4, z - 0.4, 0.79, 0.5, 0.1);
-            for (const dx of [-0.32, 0.32])
-              add(
-                cube,
-                '#9f8a57',
-                x + dx,
-                0.29,
-                z,
-                0.04,
-                0.06,
-                0.76,
-                0,
-                0,
-                0.4,
-              );
-          }
-          if (t.room === 'food') {
-            add(cylinder, '#343e2c', x, 0.13, z, 0.39, 0.12, 0.39);
-            for (let j = 0; j < 3; j++) {
-              const a = j * 2.4 + r,
-                px = x + Math.cos(a) * 0.23,
-                pz = z + Math.sin(a) * 0.23,
-                h = 0.21 + j * 0.08;
-              add(cylinder, '#9aaa87', px, h, pz, 0.035, h, 0.035);
-              add(
-                sphere,
-                j % 2 ? '#84c79d' : '#60a57d',
-                px,
-                h * 1.7,
-                pz,
-                0.17,
-                0.095,
-                0.16,
-                0,
-                0.2,
-              );
-            }
-          }
-          if (t.room === 'training') {
-            add(cylinder, '#605247', x, 0.15, z, 0.32, 0.18, 0.32);
-            add(cylinder, '#9f7750', x, 0.53, z, 0.045, 0.7, 0.045);
-            add(cube, '#a99071', x, 0.69, z, 0.6, 0.08, 0.09);
-            add(sphere, '#92614b', x, 0.83, z, 0.12, 0.16, 0.12);
-            add(cube, '#8f5744', x, 0.53, z, 0.25, 0.34, 0.19);
-          }
-          if (t.room === 'library') {
-            add(cube, '#2b4a49', x, 0.28, z, 0.58, 0.4, 0.4);
-            add(cube, '#c2b389', x, 0.51, z, 0.51, 0.045, 0.35);
-            add(cube, '#497d76', x, 0.54, z, 0.04, 0.06, 0.37);
-            add(octa, '#6df0ce', x, 0.9, z, 0.1, 0.19, 0.1, r, 0.85, 0.25);
-          }
-          if (t.room === 'forge') {
-            add(cube, '#3a3a3b', x, 0.21, z, 0.54, 0.3, 0.5);
-            add(cube, '#b9ad91', x, 0.45, z, 0.66, 0.16, 0.3);
-            add(
-              cone,
-              '#c3753b',
-              x + 0.29,
-              0.25,
-              z + 0.21,
-              0.13,
-              0.35,
-              0.13,
-              0,
-              0.8,
+          const roomIndex = [
+            'vault',
+            'rest',
+            'food',
+            'training',
+            'library',
+            'forge',
+          ].indexOf(t.room);
+          // Gaps leave walking space and keep dense rooms legible when creatures move through them.
+          if (
+            (x + z) % 2 === 0 ||
+            t.room === 'food' ||
+            ![
+              [x - 1, z],
+              [x + 1, z],
+              [x, z - 1],
+              [x, z + 1],
+            ].some(
+              ([nx, nz]) =>
+                inBounds(nx, nz) && s.tiles[idx(nx, nz)].room === t.room,
+            )
+          ) {
+            const size = 0.88 + r * 0.15;
+            contactShadow(x, z, 0.38, furnishings);
+            illustration(
+              'room-atlas',
+              3,
+              2,
+              roomIndex % 3,
+              Math.floor(roomIndex / 3),
+              x,
+              0.07,
+              z,
+              size,
+              size,
+              furnishings,
             );
           }
         } else if (r > 0.85 && t.kind === 'floor') {
           add(cube, '#383e3c', x + 0.27, 0.067, z - 0.23, 0.15, 0.035, 0.19, r);
         }
         if (t.trap) {
-          add(cylinder, '#2b4143', x, 0.16, z, 0.38, 0.14, 0.38);
-          add(octa, '#63c4b2', x, 0.27, z, 0.18, 0.2, 0.18, 0, 0.7, 0.4);
+          illustration(
+            'monuments',
+            4,
+            1,
+            3,
+            0,
+            x,
+            0.09,
+            z,
+            0.85,
+            0.85,
+            furnishings,
+          );
         }
         if (t.door) {
-          add(cube, '#55534e', x, 0.7, z, 0.92, 1.3, 0.17);
-          for (let j = -1; j <= 1; j++)
-            add(
-              cube,
-              '#b0935b',
-              x + j * 0.27,
-              0.7,
-              z + 0.1,
-              0.05,
-              1.2,
-              0.05,
-              0,
-              0,
-              0.4,
-            );
+          illustration(
+            'monuments',
+            4,
+            1,
+            2,
+            0,
+            x,
+            0.08,
+            z,
+            1.35,
+            1.6,
+            furnishings,
+          );
         }
       }
       // Brass fire bowls along the excavated boundary.
@@ -480,6 +571,7 @@ export function mountScene(
           [x, z + 1],
         ].some(([a, b]) => inBounds(a, b) && s.tiles[idx(a, b)].owned)
       ) {
+        torchPositions.push(new THREE.Vector3(x, 1.65, z));
         add(cylinder, '#80735b', x, 1.43, z, 0.12, 0.28, 0.12, 0, 0, 0.5);
         add(cone, '#ffb252', x, 1.68, z, 0.095, 0.32, 0.095, 0, 2);
         add(octa, '#ffe4a3', x, 1.63, z, 0.07, 0.15, 0.07, 0, 3);
@@ -518,99 +610,40 @@ export function mountScene(
     parent.add(m);
     return m;
   }
-  // The Ember: a suspended geological monument, surrounded by an astrolabe.
-  mesh(cylinder, '#353b3c', 13, 0.2, 14, 1.43, 0.35, 1.43);
-  mesh(cylinder, '#75664b', 13, 0.43, 14, 1.25, 0.14, 1.25, props, 0, 0.6);
-  mesh(cylinder, '#292f31', 13, 0.61, 14, 0.95, 0.28, 0.95);
-  mesh(cylinder, '#b78a45', 13, 0.8, 14, 0.7, 0.12, 0.7, props, 0.12, 0.7);
-  const crystal = mesh(
-    octa,
-    '#f5b35a',
-    13,
-    1.72,
-    14,
-    0.54,
-    1.15,
-    0.54,
-    props,
-    0.9,
-    0.3,
-  );
-  const inner = mesh(
-    octa,
-    '#ffe8ba',
-    13,
-    1.72,
-    14,
-    0.23,
-    0.92,
-    0.23,
-    props,
-    2,
-    0.1,
-  );
-  const ring = mesh(
-    torus,
-    '#bd904e',
-    13,
-    1.33,
-    14,
-    0.97,
-    0.97,
-    0.97,
-    props,
-    0.15,
-    0.7,
-  );
-  ring.rotation.x = Math.PI * 0.57;
-  ring.rotation.y = 0.32;
-  const ring2 = mesh(
-    torus,
-    '#655b47',
-    13,
-    1.25,
-    14,
-    1.12,
-    1.12,
-    1.12,
-    props,
+  // Unique landmarks: a mineral furnace and a fractured stone passage.
+  contactShadow(13, 14, 1.4, props);
+  const crystal = illustration(
+    'monuments',
+    4,
+    1,
     0,
-    0.5,
-  );
-  ring2.rotation.x = 1.1;
-  ring2.rotation.z = 0.7;
-  for (let i = 0; i < 6; i++) {
-    const a = (i * Math.PI) / 3;
-    const x = 13 + Math.cos(a) * 1.33,
-      z = 14 + Math.sin(a) * 1.33;
-    mesh(cylinder, '#45494a', x, 0.59, z, 0.13, 0.7, 0.13);
-    mesh(octa, '#dda94e', x, 1.01, z, 0.13, 0.21, 0.13, props, 0.55, 0.4);
-  }
-  const coreLight = new THREE.PointLight('#ffba62', 26, 8, 1.7);
-  coreLight.position.set(13, 2.6, 14);
-  scene.add(coreLight);
-  // Portal architecture; different shape and palette from the central monument.
-  mesh(cylinder, '#3e5557', 13, 0.2, 8, 0.92, 0.2, 0.92);
-  for (const sign of [-1, 1]) {
-    mesh(cube, '#677270', 13 + sign * 0.72, 0.94, 8, 0.25, 1.65, 0.35);
-    mesh(octa, '#86e5d4', 13 + sign * 0.72, 1.9, 8, 0.2, 0.3, 0.2, props, 0.7);
-  }
-  const gate = mesh(
-    torus,
-    '#5dc8bb',
+    0,
     13,
-    1.14,
-    8,
-    0.69,
-    0.87,
-    0.4,
+    0.08,
+    14,
+    3.15,
+    3.15,
     props,
-    1.4,
-    0.3,
   );
-  mesh(cube, '#6d7b71', 13, 1.88, 8, 1.64, 0.18, 0.43);
-  const portalLight = new THREE.PointLight('#48ddc0', 14, 7, 2);
-  portalLight.position.set(13, 1.8, 8);
+  const coreLight = new THREE.PointLight('#ffab44', 22, 8, 1.7);
+  coreLight.position.set(13, 1.8, 14);
+  scene.add(coreLight);
+  contactShadow(13, 8, 0.85, props);
+  const gate = illustration(
+    'monuments',
+    4,
+    1,
+    1,
+    0,
+    13,
+    0.08,
+    8,
+    2.2,
+    2.5,
+    props,
+  );
+  const portalLight = new THREE.PointLight('#58d4b9', 10, 6, 2);
+  portalLight.position.set(13, 1.5, 8);
   scene.add(portalLight);
   for (const [x, z] of [
     [8, 13],
@@ -652,124 +685,38 @@ export function mountScene(
     const worker = u.kind === 'worker',
       brute = u.kind === 'brute',
       enemy = u.kind === 'invader';
-    const body = worker
-      ? '#9b8063'
-      : enemy
-        ? '#bfc0ac'
+    const size = brute
+      ? 1.58
+      : worker
+        ? 1.04
         : u.kind === 'scholar'
-          ? '#426f6e'
-          : brute
-            ? '#726b80'
-            : '#74453b';
-    const size = brute ? 1.45 : worker ? 0.87 : 1.09;
+          ? 1.3
+          : 1.34;
+    const col = ['worker', 'guard', 'scholar', 'brute', 'invader'].indexOf(
+      u.kind,
+    );
     const model = new THREE.Group();
-    model.scale.setScalar(size);
     g.add(model);
-    const bodyMesh = mesh(cone, body, 0, 0.41, 0, 0.21, 0.49, 0.18, model);
-    bodyMesh.rotation.y = Math.PI / 4;
-    mesh(
-      sphere,
-      worker ? '#a5a98a' : enemy ? '#c7c4b6' : '#adb3a3',
+    contactShadow(0, 0, brute ? 0.42 : 0.26, g);
+    const sprite = illustration(
+      'creatures',
+      5,
+      4,
+      col,
       0,
-      0.77,
       0,
-      0.13,
-      0.14,
-      0.13,
+      0.07,
+      0,
+      size,
+      size,
       model,
     );
-    for (const side of [-1, 1]) {
-      mesh(
-        sphere,
-        enemy ? '#1c2b2b' : '#74c4a1',
-        side * 0.055,
-        0.79,
-        0.116,
-        0.025,
-        0.02,
-        0.027,
-        model,
-        enemy ? 0 : 0.7,
-      );
-      mesh(cube, body, side * 0.2, 0.46, 0, 0.08, 0.3, 0.1, model);
-      mesh(
-        sphere,
-        '#9b9a82',
-        side * 0.23,
-        0.32,
-        0.035,
-        0.055,
-        0.055,
-        0.055,
-        model,
-      );
-    }
-    mesh(cube, '#ad9563', 0, 0.34, 0.16, 0.27, 0.045, 0.045, model, 0, 0.4);
-    mesh(cube, '#38342b', 0, 0.35, 0.186, 0.065, 0.066, 0.02, model);
-    if (brute) {
-      mesh(sphere, '#7b766c', -0.28, 0.64, 0, 0.16, 0.19, 0.18, model);
-      mesh(sphere, '#7b766c', 0.28, 0.64, 0, 0.16, 0.19, 0.18, model);
-      mesh(octa, '#9dcea5', 0, 0.55, 0.16, 0.045, 0.1, 0.05, model, 0.5);
-    }
-    if (worker) {
-      mesh(sphere, '#6d4c2c', 0, 0.87, 0, 0.17, 0.08, 0.15, model);
-      mesh(octa, '#f9c765', 0, 0.88, 0.135, 0.045, 0.06, 0.04, model, 1);
-      mesh(cube, '#6e6244', 0.23, 0.43, 0, 0.035, 0.52, 0.035, model);
-      const pick = mesh(
-        cube,
-        '#aab4ae',
-        0.23,
-        0.7,
-        0,
-        0.32,
-        0.055,
-        0.065,
-        model,
-      );
-      pick.rotation.z = 0.3;
-    } else if (u.kind === 'scholar') {
-      mesh(cone, '#539b8c', 0, 0.98, 0, 0.15, 0.32, 0.15, model);
-      mesh(cylinder, '#9a8965', 0.26, 0.48, 0, 0.025, 0.9, 0.025, model);
-      mesh(octa, '#6fe4cf', 0.26, 0.98, 0, 0.085, 0.14, 0.085, model, 1);
-    } else {
-      mesh(
-        sphere,
-        enemy ? '#e4d9b8' : '#978e79',
-        0,
-        0.86,
-        0,
-        0.15,
-        0.08,
-        0.15,
-        model,
-      );
-      mesh(
-        cube,
-        enemy ? '#708ba0' : '#a27f4a',
-        -0.23,
-        0.46,
-        0.06,
-        0.12,
-        0.29,
-        0.24,
-        model,
-        0,
-        0.3,
-      );
-      mesh(cube, '#bfc9c5', 0.23, 0.51, 0, 0.04, 0.52, 0.075, model, 0, 0.55);
-      mesh(sphere, body, -0.2, 0.61, 0, 0.12, 0.12, 0.12, model);
-      mesh(sphere, body, 0.2, 0.61, 0, 0.12, 0.12, 0.12, model);
-    }
-    const feet = [
-      mesh(cube, '#3c3932', -0.1, 0.13, 0, 0.1, 0.22, 0.13, model),
-      mesh(cube, '#3c3932', 0.1, 0.13, 0, 0.1, 0.22, 0.13, model),
-    ];
     const bar = new THREE.Group();
     const bg = mesh(
       cube,
       '#141d22',
       0,
-      1.18 * size,
+      0.16 + 0.88 * size,
       0,
       0.53,
       0.047,
@@ -781,7 +728,7 @@ export function mountScene(
       cube,
       enemy ? '#d97d63' : '#76b69b',
       0,
-      1.18 * size,
+      0.16 + 0.88 * size,
       0.02,
       0.5,
       0.026,
@@ -791,8 +738,10 @@ export function mountScene(
     hp.castShadow = false;
     g.add(bar);
     g.userData = {
-      feet,
       model,
+      sprite,
+      col,
+      direction: 0,
       bar,
       hp,
       previous: new THREE.Vector3(u.x, 0, u.z),
@@ -835,7 +784,18 @@ export function mountScene(
     1,
   );
   rallyMarker.visible = false;
-  const effectObjects: THREE.Mesh[] = [];
+  const effectCanvas = document.createElement('canvas');
+  effectCanvas.width = effectCanvas.height = 64;
+  const effectContext = effectCanvas.getContext('2d')!;
+  const glow = effectContext.createRadialGradient(32, 32, 0, 32, 32, 32);
+  glow.addColorStop(0, '#ffffff');
+  glow.addColorStop(0.18, '#ffffffcc');
+  glow.addColorStop(0.5, '#ffffff35');
+  glow.addColorStop(1, '#ffffff00');
+  effectContext.fillStyle = glow;
+  effectContext.fillRect(0, 0, 64, 64);
+  const effectTexture = new THREE.CanvasTexture(effectCanvas);
+  const effectObjects: THREE.Sprite[] = [];
   const raycaster = new THREE.Raycaster(),
     mouse = new THREE.Vector2(),
     ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -947,6 +907,29 @@ export function mountScene(
     }
     const end = pick(e),
       tool = options.tool();
+    if (tool === 'inspect' && dragStart !== null && !dragMoved) {
+      const candidates: THREE.Sprite[] = [];
+      for (const [id, group] of unitObjects) {
+        if (!group.visible) continue;
+        group.userData.sprite.userData.unitId = id;
+        candidates.push(group.userData.sprite);
+      }
+      const hit = raycaster.intersectObjects(candidates, false)[0];
+      const wall = hit ? raycaster.intersectObject(terrain, true)[0] : null;
+      if (hit && (!wall || hit.distance < wall.distance + 0.05)) {
+        const unit = options
+          .state()
+          .units.find((u) => u.id === hit.object.userData.unitId);
+        if (unit) {
+          options.onSelect(
+            idx(Math.round(unit.x), Math.round(unit.z)),
+            unit.id,
+          );
+          dragStart = dragEnd = null;
+          return;
+        }
+      }
+    }
     if (end !== null && dragStart !== null) {
       if (
         dragMoved &&
@@ -1037,7 +1020,12 @@ export function mountScene(
     last = now;
     const time = now / 1000,
       s = options.state();
-    if (s.revision !== revision) rebuild();
+    if (s !== renderedState) {
+      creatures.clear();
+      unitObjects.clear();
+      renderedState = s;
+      rebuild();
+    } else if (s.revision !== revision) rebuild();
     if (possessed === null) {
       const forward =
           (keys.has('w') || keys.has('arrowup') ? 1 : 0) -
@@ -1095,13 +1083,27 @@ export function mountScene(
         eye.rotation.set(lookPitch, lookAngle, 0, 'YXZ');
       }
     }
-    crystal.rotation.y = time * 0.2;
-    crystal.position.y = 1.75 + Math.sin(time * 1.3) * 0.08;
-    inner.rotation.y = -time * 0.4;
-    ring.rotation.z = time * 0.09;
+    crystal.scale.setScalar(3.15 + Math.sin(time * 1.3) * 0.015);
     coreLight.intensity = 25 + Math.sin(time * 3) * 2;
-    gate.rotation.z = Math.sin(time * 0.5) * 0.03;
+    if (gate.material.map)
+      gate.material.opacity = 0.94 + Math.sin(time * 1.7) * 0.06;
     dust.rotation.y = Math.sin(time * 0.025) * 0.01;
+    const lightFocus = possessed === null ? target : eye.position;
+    const nearbyTorches = [...torchPositions].sort(
+      (a, b) =>
+        a.distanceToSquared(lightFocus) - b.distanceToSquared(lightFocus),
+    );
+    const water = surfaceTextures.get('water');
+    if (water) {
+      water.offset.set(Math.sin(time * 0.05) * 0.035, time * 0.005);
+    }
+    torchLights.forEach((light, i) => {
+      const position = nearbyTorches[i];
+      light.intensity = position
+        ? 6 + Math.sin(time * 7 + i * 2) * 0.8 + Math.sin(time * 13 + i) * 0.4
+        : 0;
+      if (position) light.position.copy(position);
+    });
     const alive = new Set(s.units.map((u) => u.id));
     for (const [id, g] of unitObjects)
       if (!alive.has(id)) {
@@ -1114,14 +1116,23 @@ export function mountScene(
       g.position.set(u.x, 0, u.z);
       const prev = g.userData.previous as THREE.Vector3;
       const moving = Math.hypot(u.x - prev.x, u.z - prev.z) > 0.002;
-      if (moving)
-        g.userData.model.rotation.y = Math.atan2(u.x - prev.x, u.z - prev.z);
+      if (moving) g.userData.direction = Math.atan2(u.x - prev.x, u.z - prev.z);
       g.userData.model.position.y = moving
         ? Math.abs(Math.sin(time * 9 + u.id)) * 0.035
         : Math.sin(time * 2 + u.id) * 0.008;
-      g.userData.feet.forEach((f: THREE.Mesh, i: number) => {
-        f.rotation.x = moving ? Math.sin(time * 10 + i * Math.PI) * 0.4 : 0;
-      });
+      const relative =
+        g.userData.direction - (possessed === null ? angle : lookAngle);
+      const view = ((Math.round(relative / (Math.PI / 2)) % 4) + 4) % 4;
+      g.userData.sprite.material = atlasMaterial(
+        'creatures',
+        5,
+        4,
+        g.userData.col,
+        view,
+      );
+      g.userData.model.rotation.z = moving
+        ? Math.sin(time * 9 + u.id) * 0.025
+        : 0;
       g.userData.bar.rotation.copy(
         (possessed === null ? camera : eye).rotation,
       );
@@ -1154,13 +1165,15 @@ export function mountScene(
       rallyMarker.rotation.z = Math.PI;
     }
     while (effectObjects.length < s.effects.length) {
-      const m = new THREE.Mesh(
-        sphere,
-        new THREE.MeshBasicMaterial({
+      const m = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: effectTexture,
           color: '#f1c97b',
           transparent: true,
           opacity: 0.5,
-          wireframe: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          toneMapped: false,
         }),
       );
       scene.add(m);
@@ -1168,11 +1181,11 @@ export function mountScene(
     }
     effectObjects.forEach((m, i) => {
       const e = s.effects[i];
-      m.visible = !!e;
+      m.visible = !!e && s.time > 0;
       if (e) {
         m.position.set(e.x, 0.5, e.z);
         m.scale.setScalar((1 - e.life) * 1.2 + 0.2);
-        const material = m.material as THREE.MeshBasicMaterial;
+        const material = m.material;
         material.opacity = Math.max(0, e.life) * 0.8;
         material.color.set(
           e.type === 'heal'
@@ -1199,9 +1212,9 @@ export function mountScene(
   return {
     center: () => {
       target.set(13, 0, 14);
-      scale = 16;
+      scale = 13.5;
       angle = Math.PI / 4;
-      elevation = 0.84;
+      elevation = 1.04;
       resize();
     },
     zoom: (n) => {
@@ -1240,6 +1253,7 @@ export function mountScene(
       });
       [
         cube,
+        slab,
         cylinder,
         sphere,
         cone,
@@ -1251,7 +1265,13 @@ export function mountScene(
         hover.geometry,
       ].forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
-      floorTexture.dispose();
+      surfaceTextures.forEach((texture) => texture.dispose());
+      atlasTextures.forEach((texture) => texture.dispose());
+      atlasSources.forEach((texture) => texture.dispose());
+      spriteMaterials.forEach((material) => material.dispose());
+      shadowGeometry.dispose();
+      shadowMaterial.dispose();
+      effectTexture.dispose();
       dustMaterial.dispose();
       markerMaterial.dispose();
       (hover.material as THREE.Material).dispose();

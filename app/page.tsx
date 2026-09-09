@@ -102,6 +102,15 @@ const clock = (n: number) =>
     .padStart(2, '0')}:${Math.floor(Math.max(0, n) % 60)
     .toString()
     .padStart(2, '0')}`;
+const illustratedRooms = [
+  'vault',
+  'rest',
+  'food',
+  'training',
+  'library',
+  'forge',
+];
+const illustratedPowers = ['worker', 'heal', 'bolt', 'rally', 'trap', 'door'];
 const roomIcons = {
   vault: Coins,
   rest: Home,
@@ -683,7 +692,9 @@ export default function App() {
         }[hoverTile.kind]
     : null;
   return translateTree(
-    <main className="game-shell">
+    <main
+      className={`game-shell ${started ? 'is-playing' : ''} ${carrying !== null ? 'is-carrying' : ''}`}
+    >
       <header className="topbar">
         <a
           className="brand"
@@ -740,6 +751,25 @@ export default function App() {
         </div>
         <div className="header-actions">
           <button
+            className="icon-button"
+            aria-label="Vollbild umschalten"
+            title="Vollbild umschalten"
+            onClick={() => {
+              if (!document.documentElement.requestFullscreen) {
+                notify('Vollbild ist in diesem Browser nicht verfügbar.');
+                return;
+              }
+              const action = document.fullscreenElement
+                ? document.exitFullscreen()
+                : document.documentElement.requestFullscreen();
+              action.catch(() =>
+                notify('Vollbild ist in diesem Browser nicht verfügbar.'),
+              );
+            }}
+          >
+            <Maximize size={16} />
+          </button>
+          <button
             className="language-toggle"
             onClick={() => setLocale(locale === 'de' ? 'en' : 'de')}
             aria-label={
@@ -775,7 +805,7 @@ export default function App() {
         <aside className={`sidebar ${compactSidebar ? 'mobile-open' : ''}`}>
           <section className="chapter-card">
             <img
-              src={`${import.meta.env.BASE_URL}art/sanctuary.webp`}
+              src={`${import.meta.env.BASE_URL}art/openart/sanctuary.webp`}
               alt="Bernsteinfarbener Obelisk in einer gewaltigen unterirdischen Festung"
             />
             <div className="chapter-shade" />
@@ -882,6 +912,8 @@ export default function App() {
                         key={kind}
                         className={`resident-row ${group.length ? '' : 'absent'}`}
                         disabled={!group.length}
+                        aria-label={`${NAMES[kind]} · ${group.length}`}
+                        title={NAMES[kind]}
                         onClick={() => selectResident(group[0].id)}
                       >
                         <span className={`resident-icon ${kind}`}>
@@ -1267,16 +1299,18 @@ export default function App() {
                     }
                   >
                     <span
-                      className={`card-visual ${t in ROOMS ? 'room-art' : ''}`}
+                      className={`card-visual ${t in ROOMS ? 'room-art' : illustratedPowers.includes(t) ? 'power-art' : ''}`}
                       style={
-                        t in ROOMS
+                        t in ROOMS || illustratedPowers.includes(t)
                           ? {
-                              backgroundPosition: `${(['vault', 'rest', 'food', 'training', 'library', 'forge'].indexOf(t) % 3) * 50}% ${Math.floor(['vault', 'rest', 'food', 'training', 'library', 'forge'].indexOf(t) / 3) * 100}%`,
+                              backgroundPosition: `${((t in ROOMS ? illustratedRooms : illustratedPowers).indexOf(t) % 3) * 50}% ${Math.floor((t in ROOMS ? illustratedRooms : illustratedPowers).indexOf(t) / 3) * 100}%`,
                             }
                           : undefined
                       }
                     >
-                      {!(t in ROOMS) && <Icon strokeWidth={1.2} />}
+                      {!(t in ROOMS) && !illustratedPowers.includes(t) && (
+                        <Icon strokeWidth={1.2} />
+                      )}
                       {locked && (
                         <LockKeyhole className="lock-badge" size={13} />
                       )}
@@ -1395,7 +1429,11 @@ export default function App() {
               <Volume2 size={16} />
             )}
           </button>
-          <button onClick={() => saveGame()}>
+          <button
+            onClick={() => saveGame()}
+            aria-label="Speichern"
+            title="Speichern"
+          >
             <Save size={15} />
             <span>Speichern</span>
           </button>

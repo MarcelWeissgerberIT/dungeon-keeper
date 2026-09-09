@@ -1,17 +1,31 @@
 # Asset provenance
 
-## Graphics
+## OpenArt visual set — 2026-09-09
 
-- `public/art/basalt.webp`: newly generated original basalt paving texture. Used as albedo and bump detail for procedural stone geometry and HUD materials. Generated with built-in Imagegen, then resized and WebP-encoded. Tiling edges are not certified seamless.
-- `public/art/room-atlas.webp`: newly generated original 3×2 equipment atlas: treasure chest, resting alcove, mushrooms, training dummy, rune lectern, furnace/anvil. Built-in Imagegen; WebP conversion. These are functional room-tool illustrations.
-- `public/art/sanctuary.webp`: original underground amber-obelisk artwork, built-in Imagegen; resized and WebP-encoded. Retained as optional expedition artwork; the immersive HUD does not display a website hero panel.
-- 3D terrain, structures and creatures: original procedural geometry authored in `app/scene.ts`. No imported commercial game models.
-- Functional icons: Lucide via `lucide-react`, under its ISC license.
-- Favicon: original geometric ember symbol.
+Twelve original images were generated through `https://mcp.openart.ai/mcp` using the authenticated native MCP client and the `gpt-image-2-5-sunburst` text-to-image model. The original game's screenshots were studied for composition, camera framing, material density and HUD proportions; they were not uploaded as generation references or copied into this repository.
 
-## OpenArt request
+Generation IDs, model settings and exact prompts are in [openart-generations.json](openart-generations.json). An earlier working title appears inside some stored prompts; the final game is **Kluftkrone** and the images contain no title text. Credentials, account records and expiring download URLs are not included.
 
-`https://mcp.openart.ai/mcp` was tried on 2026-09-09. An unauthenticated initialize request required OAuth; an authenticated request was rejected by the service firewall (HTTP 403, browser signature denied). No generated output was returned. The limitation was communicated, and Imagegen was used as the available fallback. No credentials are included in the repository.
+Runtime graphics live in `public/art/openart/`:
+
+| File | Contents / use |
+| --- | --- |
+| `floor.webp` | Worn small-stone corridor and room paving, tinted by room function |
+| `wall.webp` | Chipped masonry courses with dark mortar |
+| `earth.webp` | Layered earth, roots and rock |
+| `gold.webp` | Mineral gold seams |
+| `water.webp` | Subterranean water surface, animated texture coordinates |
+| `hud-stone.webp` | Continuous carved basalt and aged copper command panel |
+| `creatures.webp` | 5×4 atlas: delver, warden, scholar, colossus, invader; four directional views |
+| `room-atlas.webp` | 3×2 atlas: treasury, rest, food, training, library, forge furnishings |
+| `monuments.webp` | 4×1 atlas: mineral furnace, fissure portal, gate, snare |
+| `powers.webp` | 3×2 atlas: summon, healing, lightning, rally, snare, gate icons |
+| `hand-open.png`, `hand-grab.png` | Two cursor states cut from the generated gauntlet sheet |
+| `sanctuary.webp` | Original chamber illustration used behind game dialogs |
+
+Generated black extraction mattes are converted conservatively to transparency. Sprites are packed into square cells with preserved aspect ratio and a common foot baseline. Runtime files are resized and WebP-encoded; cursors use PNG. Creature movement combines directional views, bobbing and swaying; the sheets contain directional poses, not a full hand-animated walk cycle. Terrain remains original 3D geometry with albedo/bump textures, lighting and contact shadows. Flat decorative sprites face the camera; they are not volumetric 3D models.
+
+The original Kluftkrone font and geometric ember favicon remain independently authored. Small functional interface symbols use Lucide under its ISC license. No commercial game artwork, models, maps or UI graphics are shipped. The earlier built-in Imagegen fallback graphics are removed from this release.
 
 ## Audio
 
@@ -19,4 +33,4 @@ All music, ambience, effects and creature voices are synthesized by original cod
 
 ## Typography
 
-The original Kluftkrone Inscribed font is used only for display labels and headings. Body text uses local system fonts for readability. The font source and authorship record are included alongside the font assets.
+The original Kluftkrone Inscribed font is used for display labels and headings. Body text uses local system fonts for readability. The font source and authorship record are included alongside the font assets.

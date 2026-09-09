@@ -16,3 +16,7 @@ A first title candidate was discarded after finding games already using it. A pu
 - [UrhG §23](https://www.gesetze-im-internet.de/urhg/__23.html), [MarkenG §14](https://www.gesetze-im-internet.de/markeng/__14.html), [UWG §4(3)](https://www.gesetze-im-internet.de/uwg_2004/__4.html): adaptations, trademark confusion and unfair imitation require separate consideration.
 
 The implementation aims to maintain independent expression; this design record does not guarantee legal clearance or trademark availability.
+
+## Visual reference review
+
+The 2026-09-09 revision additionally compared twelve historical images in the [GOG gallery](https://www.gog.com/en/game/dungeon_keeper) and this [original gameplay screenshot](https://freebie.games/wp-content/uploads/2023/08/Dungeon-Keeper-gallery-02.png). The observations informed general visual principles: a close oblique view, heavy textured wall flanks, many small pavers, warm local light, distinct creature silhouettes, and one continuous side command panel. The new copper/basalt panel, mineral furnace, fissure portal, gauntlets, creatures and furnishings use independent designs. Reference screenshots are not distributed.
