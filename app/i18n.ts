@@ -6,6 +6,63 @@ import {
 } from 'react';
 export type Locale = 'de' | 'en';
 const messages: Record<string, string> = {
+  Gefängnis: 'Prison',
+  Folterkammer: 'Torment room',
+  Ritualkammer: 'Ritual room',
+  Aschensegen: 'Ash blessing',
+  'Je zwei Gefängnisfelder halten einen besiegten Sonnenritter fest. Nur erreichbare, freie Zellen fangen Gegner. Gefangene kannst du greifen und in die Folterkammer versetzen.':
+    'Every two prison tiles hold one defeated Sun Knight. Only reachable, free cells capture enemies. Pick up prisoners and move them to the torment room.',
+  'Ab vier Feldern: Runenweber brechen den Widerstand eines Gefangenen in 75 Sekunden. Er wird zum Aschewächter; benötigt einen freien Ruheplatz und vier Pilzgartenfelder. Forschung erforderlich.':
+    'At least four tiles allow rune weavers to break a prisoner’s resistance in 75 seconds. They become an Ash Warden; requires a free rest space and four fungal-garden tiles. Research required.',
+  'Vier Felder ermöglichen den Aschensegen: 60 Sekunden mehr Kampfkraft, Mana und Zufriedenheit. Auslösen unter Mächte für 250 Gold; 120 Sekunden Abklingzeit. Forschung erforderlich.':
+    'Four tiles enable Ash blessing: 60 seconds of greater combat strength, mana and happiness. Activate under Powers for 250 gold; 120-second cooldown. Research required.',
+  'Vier Ritualfelder. Für 250 Gold: 60 Sekunden +20 % Kampfkraft, +2 Mana pro Sekunde und mehr Zufriedenheit. 120 Sekunden Abklingzeit.':
+    'Four ritual tiles. For 250 gold: 60 seconds of +20% combat damage, +2 mana per second and greater happiness. 120-second cooldown.',
+  'Dieser Raum benötigt abgeschlossene Forschung.':
+    'This room requires completed research.',
+  'Versetze zuerst den Gefangenen auf diesem Feld.':
+    'Move the prisoner off this tile first.',
+  'Für die Gefangenen werden diese Zellen noch benötigt.':
+    'These cells are still needed for the prisoners.',
+  Gefangen: 'Imprisoned',
+  'Leitet Folterritual': 'Conducting torment ritual',
+  'Benötigt vier Folterfelder': 'Needs four torment tiles',
+  'Wartet auf Runenweber': 'Awaiting a rune weaver',
+  'Widerstand schwindet': 'Resistance fading',
+  'Wartet auf Ruheplatz und Nahrung': 'Awaiting rest space and food',
+  Übergelaufen: 'Converted',
+  'Ein Sonnenritter wurde im Gefängnis gebunden.':
+    'A Sun Knight has been bound in the prison.',
+  'Ein Sonnenritter hat sich deinem Reich angeschlossen.':
+    'A Sun Knight has joined your domain.',
+  'Erforsche die Runen und baue vier Ritualfelder.':
+    'Complete rune research and build four ritual tiles.',
+  'Der Aschensegen klingt noch ab.': 'Ash blessing is still cooling down.',
+  'Aschensegen: Dein Reich erstarkt für 60 Sekunden.':
+    'Ash blessing: your domain grows stronger for 60 seconds.',
+  'Gefangene benötigen eine freie eigene Gefängniszelle oder ein Folterfeld.':
+    'Prisoners need a free prison cell or torment tile in your domain.',
+  'Räume und Mächte – für weitere Einträge scrollen':
+    'Rooms and powers – scroll for more entries',
+  'Gefangene und Rituale': 'Prisoners and rituals',
+  GEFANGENE: 'PRISONERS',
+  Zellen: 'Cells',
+  Überläufer: 'Converts',
+  'Gefangenen ansehen': 'Inspect prisoner',
+  'Besiegte Gegner werden in freie Zellen gebunden.':
+    'Defeated enemies are bound in free cells.',
+  ASCHENSEGEN: 'ASH BLESSING',
+  Bekehrung: 'Conversion',
+  'Gefangenen greifen': 'Grab prisoner',
+  'Greifen und auf einem freien Folterfeld absetzen. Ab vier Feldern übernimmt ein Runenweber die Bekehrung.':
+    'Pick up and drop on a free torment tile. With at least four tiles, a rune weaver handles the conversion.',
+  '07 / Gefangen nehmen': '07 / Capture',
+  '08 / Dunkle Künste': '08 / Dark arts',
+  'Baue vor einem Angriff ein Gefängnis. Je zwei Felder halten einen besiegten Sonnenritter; die Zelle muss erreichbar und frei sein. In der Gefangenenliste öffnest du seine Details. Greife ihn und wirf ihn auf ein freies Folterfeld. Belegte Zellen können nicht verkauft werden.':
+    'Build a prison before an invasion. Every two tiles hold one defeated Sun Knight; the cell must be reachable and free. Open their details from the prisoner list. Pick them up and drop them on a free torment tile. Occupied cells cannot be sold.',
+  'Nach der Runenforschung: Baue mindestens vier Folterfelder. Ein Runenweber bekehrt dort Gefangene in 75 Sekunden zu Aschewächtern. Freie Ruheplätze und vier Pilzgartenfelder sind erforderlich. Vier Ritualfelder ermöglichen unter Mächte den Aschensegen für 250 Gold: 60 Sekunden mehr Schaden, Mana und Zufriedenheit; 120 Sekunden Abklingzeit.':
+    'After rune research, build at least four torment tiles. A rune weaver converts prisoners into Ash Wardens in 75 seconds. Free rest spaces and four fungal-garden tiles are required. Four ritual tiles unlock Ash blessing under Powers for 250 gold: 60 seconds of greater damage, mana and happiness, with a 120-second cooldown.',
+
   Schließen: 'Close',
   'Auf Deutsch umschalten': 'Switch to German',
   'Dreidimensionale Dungeon-Karte. Ziehen zum Markieren, rechte Maustaste zum Drehen.':

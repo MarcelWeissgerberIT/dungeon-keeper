@@ -3,6 +3,7 @@ import {
   ROOMS,
   applyTool,
   roomBuildProblem,
+  roomLocked,
   type GameState,
   type Room,
   type Tool,
@@ -125,7 +126,9 @@ export function quoteDesignation(
                 ? 'Hier ist bereits ausgegraben.'
                 : tool === 'forge' && !s.unlocked
                   ? 'Die Werkstatt benötigt abgeschlossene Forschung.'
-                  : '';
+                  : roomLocked(s, tool)
+                    ? 'Dieser Raum benötigt abgeschlossene Forschung.'
+                    : '';
     if (problem) {
       blocked.push(i);
       reason ||= problem;

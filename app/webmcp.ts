@@ -46,13 +46,20 @@ export function registerGameTools(
           wave: s.wave,
           time: s.time,
           status: s.status,
-          units: s.units.map(({ id, kind, x, z, state }) => ({
-            id,
-            kind,
-            x,
-            z,
-            state: translate(state, locale),
-          })),
+          captured: s.captured,
+          converted: s.converted,
+          ritualSeconds: Math.max(0, s.ritualUntil - s.time),
+          units: s.units.map(
+            ({ id, kind, x, z, state, prisoner, conversion }) => ({
+              id,
+              kind,
+              x,
+              z,
+              state: translate(state, locale),
+              prisoner,
+              conversion,
+            }),
+          ),
           tiles: s.tiles
             .filter((t) => t.seen)
             .map(({ x, z, kind, room, owned, marked, plannedRoom }) => ({

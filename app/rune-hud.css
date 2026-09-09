@@ -997,3 +997,187 @@
 .need b {
   font-variant-numeric: tabular-nums;
 }
+
+/* Dark arts extend the existing command HUD, including compact viewports. */
+.game-shell .build-cards {
+  max-height: 206px;
+  overflow-y: auto;
+  align-content: start;
+  scrollbar-color: #a27b48 #12100c;
+  scrollbar-width: thin;
+  padding-right: 0;
+}
+.build-tabs small {
+  font-size: 12px;
+  color: #ac8e5b;
+}
+.designation-choice {
+  flex-wrap: wrap;
+}
+.dark-room-art {
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.prison-ledger {
+  position: absolute;
+  z-index: 12;
+  top: 91px;
+  right: 18px;
+  width: 226px;
+  padding: 9px;
+  border: 12px solid transparent;
+  border-image: var(--rune-panel) 160 fill / 12px stretch;
+  color: #d7c6ab;
+  text-shadow: 1px 1px #000;
+}
+.prison-ledger-heading,
+.prison-summary,
+.ritual-status {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+}
+.prison-ledger-heading {
+  color: #d6ade6;
+  margin-bottom: 7px;
+}
+.prison-ledger-heading b {
+  margin-left: auto;
+  font-size: 14px;
+}
+.prison-summary {
+  color: #b9a483;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.prison-ledger > small {
+  font-size: 12px;
+  line-height: 1.4;
+  display: block;
+}
+.prison-list {
+  display: grid;
+  gap: 5px;
+  max-height: 145px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.prison-list button {
+  display: grid;
+  gap: 4px;
+  padding: 5px;
+  color: #dec5e9;
+  text-align: left;
+  background: #100d1399;
+  border: 1px solid #644a67;
+  cursor: pointer;
+  font-size: 12px;
+}
+.prison-list button > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.prison-list small {
+  font-size: 12px;
+  color: #aa99aa;
+}
+.prison-list [data-slot='progress'] {
+  height: 4px;
+}
+.ritual-status {
+  color: #ffd389;
+  border-top: 1px solid #755534;
+  padding-top: 7px;
+  margin-top: 7px;
+}
+.ritual-status b {
+  margin-left: auto;
+}
+.prisoner-detail p {
+  color: #c6b19c;
+  font-size: 14px;
+  line-height: 1.5;
+}
+@media (max-width: 780px) {
+  .game-shell .build-cards {
+    max-height: min(276px, max(88px, calc(100dvh - 410px)));
+  }
+  .prison-ledger {
+    top: 75px;
+    right: 8px;
+    width: 185px;
+    padding: 5px;
+    border-width: 8px;
+    border-image-width: 8px;
+  }
+  .prison-list {
+    max-height: 84px;
+  }
+  .prison-ledger > small {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .prison-ledger {
+    width: min(172px, calc(100vw - var(--command-width) - 14px));
+  }
+  .prison-summary {
+    gap: 3px;
+  }
+  .prison-list button > span {
+    flex-wrap: wrap;
+  }
+  .build-tabs small {
+    display: none;
+  }
+}
+.right-hud {
+  position: absolute;
+  z-index: 12;
+  right: 18px;
+  top: 176px;
+  width: 240px;
+  max-height: calc(100dvh - 265px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #a27b48 #12100c;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.game-shell:not(.is-playing) .right-hud {
+  top: 346px;
+  max-height: calc(100dvh - 420px);
+}
+.right-hud :is(.prison-ledger, .queued-orders) {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+  flex-shrink: 0;
+}
+@media (max-width: 780px) {
+  .right-hud {
+    right: 8px;
+    width: min(210px, calc(100vw - var(--command-width) - 14px));
+  }
+  .prison-list button {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .prison-list button > span {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 560px) {
+  .game-shell .build-card,
+  .game-shell .build-card.selected {
+    border-width: 4px;
+    border-image-width: 4px;
+  }
+}

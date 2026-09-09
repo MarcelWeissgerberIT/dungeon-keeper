@@ -46,3 +46,7 @@ Three additional original images were generated through the authenticated OpenAr
 | `public/art/openart/runic-hud/icon-frame.webp` | Room sockets, smaller controls and slider/toggle faces |1024×1024|
 
 Lossless WebP encoding preserves the dimensions and decoded RGBA pixels of the original PNGs; equality was checked. The assets contain no lettering. `app/rune-hud.css` uses nine-slice borders with source slices 160, 140/160 and 144, respectively. The authored pixel font supplies all visible text independently of OpenArt.
+
+## Dark-arts rooms
+
+Three original OpenArt square room icons are stored in `public/art/openart/dark-rooms/`: `prison.webp`, `torment.webp`, and `ritual.webp`. Their lossless encoded pixels match the generated 1024×1024 PNGs. Full prompts, model, generation IDs and source/output hashes are in [dark-room-generations.json](dark-room-generations.json). The 3D dungeon uses original instanced room furnishings implemented in `app/scene.ts`; the icons identify the corresponding build controls. New procedural capture/torment/ritual sounds are composed directly in `app/audio.ts`, using the existing independently controlled effects channel.

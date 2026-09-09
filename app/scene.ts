@@ -307,6 +307,121 @@ export function mountScene(
     return light;
   });
   const torchPositions: THREE.Vector3[] = [];
+  function darkRoomFixtures(room: string, x: number, z: number) {
+    const bronze = '#876445',
+      stone = '#383138',
+      iron = '#42474f';
+    if (room === 'prison') {
+      // An open front keeps the bound creature visible and easy to pick up.
+      for (const dx of [-0.4, 0.4]) {
+        add(
+          cube,
+          stone,
+          x + dx,
+          0.43,
+          z - 0.38,
+          0.13,
+          0.8,
+          0.13,
+          0,
+          0,
+          0,
+          'wall',
+        );
+        add(cone, bronze, x + dx, 0.9, z - 0.38, 0.12, 0.18, 0.12, 0, 0, 0.65);
+      }
+      for (let j = -2; j <= 2; j++)
+        add(
+          cylinder,
+          iron,
+          x + j * 0.13,
+          0.47,
+          z - 0.38,
+          0.028,
+          0.75,
+          0.028,
+          0,
+          0,
+          0.7,
+        );
+      add(cube, bronze, x, 0.78, z - 0.38, 0.87, 0.055, 0.06, 0, 0, 0.7);
+      add(octa, '#b694e8', x - 0.4, 0.63, z - 0.25, 0.08, 0.13, 0.08, 0, 1);
+      add(cylinder, '#59496c', x, 0.08, z, 0.35, 0.03, 0.35, 0, 0.2);
+    } else if (room === 'torment') {
+      add(cylinder, stone, x, 0.12, z, 0.43, 0.14, 0.43, 0, 0, 0.2);
+      add(cube, stone, x, 0.27, z - 0.14, 0.34, 0.23, 0.34, 0, 0, 0, 'wall');
+      add(cube, stone, x, 0.6, z - 0.34, 0.35, 0.72, 0.08, 0, 0, 0, 'wall');
+      add(cube, '#d9a476', x, 0.62, z - 0.29, 0.025, 0.52, 0.025, 0, 0.6, 0.3);
+      for (const dx of [-0.3, 0.3]) {
+        add(
+          cylinder,
+          bronze,
+          x + dx,
+          0.46,
+          z - 0.1,
+          0.03,
+          0.68,
+          0.03,
+          0,
+          0,
+          0.8,
+        );
+        add(
+          octa,
+          '#c278de',
+          x + dx,
+          0.91,
+          z - 0.1,
+          0.09,
+          0.22,
+          0.09,
+          dx * 2,
+          0.9,
+          0.25,
+        );
+        add(cube, bronze, x + dx * 0.7, 0.36, z, 0.06, 0.08, 0.38, 0, 0, 0.6);
+        for (let k = 0; k < 4; k++)
+          add(
+            torus,
+            iron,
+            x + dx,
+            0.24 + k * 0.075,
+            z + 0.16,
+            0.035,
+            0.05,
+            0.035,
+            ((k % 2) * Math.PI) / 2,
+            0,
+            0.7,
+          );
+      }
+    } else if (room === 'ritual') {
+      add(cylinder, stone, x, 0.11, z, 0.44, 0.1, 0.44, 0, 0, 0.1);
+      add(cylinder, '#d89a50', x, 0.168, z, 0.35, 0.015, 0.35, 0, 0.6);
+      add(cylinder, stone, x, 0.18, z, 0.32, 0.02, 0.32);
+      for (const dx of [-0.33, 0.33]) {
+        add(
+          cube,
+          stone,
+          x + dx,
+          0.46,
+          z - 0.26,
+          0.12,
+          0.64,
+          0.14,
+          0.12,
+          0,
+          0,
+          'wall',
+        );
+        add(cone, stone, x + dx, 0.87, z - 0.26, 0.14, 0.2, 0.16);
+        add(octa, '#edbd73', x + dx, 0.67, z - 0.17, 0.035, 0.09, 0.03, 0, 1.1);
+      }
+      add(cylinder, bronze, x, 0.23, z, 0.12, 0.11, 0.12, 0, 0, 0.6);
+      add(octa, '#ffb750', x, 0.37, z, 0.09, 0.2, 0.09, 0, 1.2);
+      torchPositions.push(new THREE.Vector3(x, 0.8, z));
+    }
+  }
   let revision = -1;
   let renderedState: GameState | null = null;
   function rebuild() {
@@ -495,19 +610,21 @@ export function mountScene(
             'library',
             'forge',
           ].indexOf(t.room);
+          if (roomIndex < 0) darkRoomFixtures(t.room, x, z);
           // Gaps leave walking space and keep dense rooms legible when creatures move through them.
           if (
-            (x + z) % 2 === 0 ||
-            t.room === 'food' ||
-            ![
-              [x - 1, z],
-              [x + 1, z],
-              [x, z - 1],
-              [x, z + 1],
-            ].some(
-              ([nx, nz]) =>
-                inBounds(nx, nz) && s.tiles[idx(nx, nz)].room === t.room,
-            )
+            roomIndex >= 0 &&
+            ((x + z) % 2 === 0 ||
+              t.room === 'food' ||
+              ![
+                [x - 1, z],
+                [x + 1, z],
+                [x, z - 1],
+                [x, z + 1],
+              ].some(
+                ([nx, nz]) =>
+                  inBounds(nx, nz) && s.tiles[idx(nx, nz)].room === t.room,
+              ))
           ) {
             const size = 0.88 + r * 0.15;
             contactShadow(x, z, 0.38, furnishings);
@@ -706,7 +823,7 @@ export function mountScene(
     bg.castShadow = false;
     const hp = mesh(
       cube,
-      u.kind === 'invader' ? '#d97d63' : '#76b69b',
+      u.prisoner ? '#bb92e2' : u.kind === 'invader' ? '#d97d63' : '#76b69b',
       0,
       rig.height + 0.16,
       0.02,
@@ -719,6 +836,8 @@ export function mountScene(
     g.add(bar);
     g.position.set(u.x, 0, u.z);
     g.userData = {
+      kind: u.kind,
+      prisoner: u.prisoner,
       model,
       rig,
       direction: Math.PI / 4,
@@ -1178,7 +1297,17 @@ export function mountScene(
         unitObjects.delete(id);
       }
     for (const u of s.units) {
+      const previousModel = unitObjects.get(u.id);
+      if (
+        previousModel &&
+        (previousModel.userData.kind !== u.kind ||
+          previousModel.userData.prisoner !== u.prisoner)
+      ) {
+        creatures.remove(previousModel);
+        unitObjects.delete(u.id);
+      }
       const g = unitObjects.get(u.id) ?? makeUnit(u);
+      g.userData.model.rotation.x = u.prisoner ? 0.14 : 0;
       g.visible = u.id !== possessed;
       const prev = g.userData.previous as THREE.Vector3;
       if (u.id === s.heldUnitId) {
@@ -1406,7 +1535,9 @@ export function mountScene(
               ? '#76e3e8'
               : e.type === 'hit'
                 ? '#eb8b64'
-                : '#f1c97b',
+                : e.type === 'torment' || e.type === 'capture'
+                  ? '#be81e4'
+                  : '#f1c97b',
         );
       }
     });

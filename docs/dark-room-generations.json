@@ -1,0 +1,70 @@
+{
+  "provider": "https://mcp.openart.ai/mcp",
+  "date": "2026-09-09",
+  "note": "Original generated room icons; lossless WebP encoding without changes to source pixels. Original prompts and model IDs below.",
+  "generations": [
+    {
+      "name": "prison",
+      "file": "public/art/openart/dark-rooms/prison.webp",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "historyId": "IHmXo1qwSMPeWFW82A8j",
+      "model": "gpt-image-2-5-sunburst",
+      "params": {
+        "imageCount": 1,
+        "resolutionTier": "1k",
+        "aspectRatio": "1:1",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false,
+        "prompt": "Original isometric room-equipment game icon for our own dark subterranean fantasy strategy game Kluftkrone. Rich hand-painted realistic fantasy game art with physically tangible chipped basalt, age-blackened iron, worn bronze and oxidized copper, worked stone and sparse mineral amber light. Chunky crafted shapes with intricate secondary details, readable at a small game-HUD size. Cohesive antique charcoal, earthy bronze, muted olive and restrained amber palette. Isometric three-quarter view from above, around 30 degrees elevation, with front and right sides visible. The artwork is ONE complete central freestanding miniature architectural assembly on a compact stone plinth, with a clean identifiable outer silhouette. Isolated against a perfectly uniform pure black #000000 background, not a full environmental scene. The complete assembly fills about 80 percent of the image width and height with generous consistent black space around every extremity and the bottom of its base around 90 percent of image height. Soft readable directional light from upper left, gently illuminated material details, deep but legible shadow crevices, no crushed indistinguishable black. No crop, no cut-off extremities, no surrounding dungeon corridor or floor, no perspective horizon, no multiple views, no atlas. Original invented architecture and abstract rune-like geometry only; never reproduce any existing game asset, character, logo or recognizable layout. Absolutely no written text, labels, letters, numbers, logo or watermark. No characters, no people, no occupants, no creatures, no bodies, no nudity, no blood or gore. Subject: an EMPTY ominous subterranean prison cell assembly. A stout rectangular basalt foundation with uneven chipped paving, two short stone corner piers and tall heavy iron bars forming the rear and side of a small barred enclosure. A substantial iron-bar door stands slightly ajar at the front. Thick hanging iron chains loop from a copper wall hook, with loose empty iron cuffs laid on a low stone block inside. One small caged VIOLET lantern hanging from the corner pier casts restrained violet light inside the vacant cage and makes it identifiable. Carefully forged gate hinges, bronze rivets and weathered lock hardware, heavy angular stone feet. Central vertical bars and violet lamp are the dominant readable features. It must feel like a compact game room-equipment icon, not a prison building or a realistic jail photograph."
+      },
+      "sourceSha256": "e83a8d4a81068f07b59720056e1a6c00990f333e3b1bb72a37e3857508b08b30",
+      "sha256": "b2166334fb5648d5ef017c04ec215f51be9c6849f78d40357e3a16a5e36bb119"
+    },
+    {
+      "name": "torment",
+      "file": "public/art/openart/dark-rooms/torment.webp",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "historyId": "KdeRLIEls2Eu0Db0JFsc",
+      "model": "gpt-image-2-5-sunburst",
+      "params": {
+        "imageCount": 1,
+        "resolutionTier": "1k",
+        "aspectRatio": "1:1",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false,
+        "prompt": "Original isometric room-equipment game icon for our own dark subterranean fantasy strategy game Kluftkrone. Rich hand-painted realistic fantasy game art with physically tangible chipped basalt, age-blackened iron, worn bronze and oxidized copper, worked stone and sparse mineral amber light. Chunky crafted shapes with intricate secondary details, readable at a small game-HUD size. Cohesive antique charcoal, earthy bronze, muted olive and restrained amber palette. Isometric three-quarter view from above, around 30 degrees elevation, with front and right sides visible. The artwork is ONE complete central freestanding miniature architectural assembly on a compact stone plinth, with a clean identifiable outer silhouette. Isolated against a perfectly uniform pure black #000000 background, not a full environmental scene. The complete assembly fills about 80 percent of the image width and height with generous consistent black space around every extremity and the bottom of its base around 90 percent of image height. Soft readable directional light from upper left, gently illuminated material details, deep but legible shadow crevices, no crushed indistinguishable black. No crop, no cut-off extremities, no surrounding dungeon corridor or floor, no perspective horizon, no multiple views, no atlas. Original invented architecture and abstract rune-like geometry only; never reproduce any existing game asset, character, logo or recognizable layout. Absolutely no written text, labels, letters, numbers, logo or watermark. No characters, no people, no occupants, no creatures, no bodies, no nudity, no blood or gore. Subject: an EMPTY arcane torment chamber apparatus, designed as an original dark-fantasy magical machine rather than a human scene. An imposing angular basalt rune-chair with a high forked carved backrest, broad stone seat and heavy oxidized copper armatures stands on a stepped hexagonal plinth. Around the backrest float three small faceted violet-and-amber crystals suspended between asymmetric copper rings. Loose chains hang from the sides, empty and clearly unoccupied. Fine geometric rune-like channels in the stone glow faint amber, with cables of black iron links leading into a small bronze mechanism beneath the chair. Strong central chair silhouette, visible seat surface, readable front arms, intricate sculptural metal clamps and mineral patina. It should look eerie, ceremonial and mechanical. The entire device is vacant; no living being is present and no injury is depicted."
+      },
+      "sourceSha256": "678e6d34d203fa1585db58d91dea349747b0373e495cb47585810ed265890f8e",
+      "sha256": "e3f5ce9fceb949594dbb0fbd15a0247d0e6423bba206e573317cf55050748a58"
+    },
+    {
+      "name": "ritual",
+      "file": "public/art/openart/dark-rooms/ritual.webp",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "historyId": "0dgsUU6227sbh6x4Ikcc",
+      "model": "gpt-image-2-5-sunburst",
+      "params": {
+        "imageCount": 1,
+        "resolutionTier": "1k",
+        "aspectRatio": "1:1",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false,
+        "prompt": "Original isometric room-equipment game icon for our own dark subterranean fantasy strategy game Kluftkrone. Rich hand-painted realistic fantasy game art with physically tangible chipped basalt, age-blackened iron, worn bronze and oxidized copper, worked stone and sparse mineral amber light. Chunky crafted shapes with intricate secondary details, readable at a small game-HUD size. Cohesive antique charcoal, earthy bronze, muted olive and restrained amber palette. Isometric three-quarter view from above, around 30 degrees elevation, with front and right sides visible. The artwork is ONE complete central freestanding miniature architectural assembly on a compact stone plinth, with a clean identifiable outer silhouette. Isolated against a perfectly uniform pure black #000000 background, not a full environmental scene. The complete assembly fills about 80 percent of the image width and height with generous consistent black space around every extremity and the bottom of its base around 90 percent of image height. Soft readable directional light from upper left, gently illuminated material details, deep but legible shadow crevices, no crushed indistinguishable black. No crop, no cut-off extremities, no surrounding dungeon corridor or floor, no perspective horizon, no multiple views, no atlas. Original invented architecture and abstract rune-like geometry only; never reproduce any existing game asset, character, logo or recognizable layout. Absolutely no written text, labels, letters, numbers, logo or watermark. No characters, no people, no occupants, no creatures, no bodies, no nudity, no blood or gore. Subject: a compact sacred dark-fantasy RITUAL CIRCLE assembly. A thick circular stepped basalt dais, its top visible in isometric view, holds concentric chiseled geometric channels with restrained RED-GOLD EMBER light glowing inside the incisions. Three uneven tall faceted black stone obelisks stand around the rear and sides of the circle, each with a narrow bronze band and a small amber crystal inlay. Keep the front of the ring open so its intricate carved circular floor remains clearly visible. A small low central ember bowl emits a few red-gold sparks and very little smoke; no huge flame conceals the circle. Chipped angular stone slabs, tiny copper votive fittings, worn edge molding. Dominant silhouette is a readable circular stone altar framed by three obelisks. No characters or summoning creature, no giant magical background, no text inside the ring."
+      },
+      "sourceSha256": "d4eef4e37d8726eb38001beff0293f4e616e8d9936dc36b8c04fab43212305f7",
+      "sha256": "db7861185626f47ebb908a82f62fac48015fcb1c6f7d2e61e75e352946d60d65"
+    }
+  ]
+}

@@ -72,6 +72,11 @@ import {
 } from './audio';
 import {
   ROOMS,
+  ROOM_KEYS,
+  roomLocked,
+  prisoners,
+  hostiles,
+  prisonCapacity,
   NAMES,
   UNIT_COLORS,
   SIZE,
@@ -129,6 +134,9 @@ const roomIcons = {
   training: Swords,
   library: BookOpen,
   forge: Hammer,
+  prison: LockKeyhole,
+  torment: Zap,
+  ritual: Flame,
 };
 const toolMeta: Record<
   string,
@@ -207,6 +215,13 @@ const toolMeta: Record<
       '280 Widerstand. Hält Eindringlinge auf und lässt eigene Bewohner passieren.',
     icon: DoorClosed,
     cost: '150 Gold · 1 Werkstück',
+  },
+  ritualBlessing: {
+    name: 'Aschensegen',
+    icon: Flame,
+    cost: '250 Gold',
+    description:
+      'Vier Ritualfelder. Für 250 Gold: 60 Sekunden +20 % Kampfkraft, +2 Mana pro Sekunde und mehr Zufriedenheit. 120 Sekunden Abklingzeit.',
   },
 };
 for (const [key, value] of Object.entries(ROOMS))
@@ -288,7 +303,7 @@ function Minimap({
     }
     for (const u of state.units) {
       if (u.id === state.heldUnitId) continue;
-      c.fillStyle = UNIT_COLORS[u.kind];
+      c.fillStyle = u.prisoner ? '#c796e3' : UNIT_COLORS[u.kind];
       c.beginPath();
       c.arc(u.x * cell + 3, u.z * cell + 3, 2, 0, Math.PI * 2);
       c.fill();
@@ -451,7 +466,11 @@ export default function App() {
       if (dropUnit(s, id, i)) {
         notify('Bewohner abgesetzt.');
         soundRef.current?.voice(unit?.kind ?? 'worker', 'drop');
-      } else
+      } else if (unit?.prisoner)
+        notify(
+          'Gefangene benötigen eine freie eigene Gefängniszelle oder ein Folterfeld.',
+        );
+      else
         notify(
           'Wähle erkundeten, begehbaren Boden. Die Kreatur bleibt in deiner Hand.',
         );
@@ -486,7 +505,7 @@ export default function App() {
       cancelGrab(stateRef.current);
       refresh();
       sound();
-      if (next === 'worker') {
+      if (next === 'worker' || next === 'ritualBlessing') {
         const result = applyTool(stateRef.current, next, 13 + 14 * SIZE);
         if (result.message) notify(result.message);
         refresh();
@@ -694,9 +713,7 @@ export default function App() {
           previousEffects.add(effect);
         }
       }
-      soundRef.current?.setTension(
-        stateRef.current.units.filter((u) => u.kind === 'invader').length / 8,
-      );
+      soundRef.current?.setTension(hostiles(stateRef.current).length / 8);
       uiElapsed += elapsed;
       if (uiElapsed > 0.18) {
         refresh();
@@ -847,14 +864,14 @@ export default function App() {
     meta = toolMeta[tool];
   const items =
     category === 'rooms'
-      ? (['vault', 'rest', 'food', 'training', 'library', 'forge'] as Tool[])
+      ? (ROOM_KEYS as Tool[])
       : category === 'powers'
-        ? (['worker', 'heal', 'bolt', 'rally'] as Tool[])
+        ? (['worker', 'heal', 'bolt', 'rally', 'ritualBlessing'] as Tool[])
         : (['trap', 'door', 'sell'] as Tool[]);
   const constructionQuote = construction
     ? quoteDesignation(s, construction.room, construction.indices)
     : null;
-  const queuedOrders = (['dig', ...illustratedRooms] as DesignationTool[])
+  const queuedOrders = (['dig', ...ROOM_KEYS] as DesignationTool[])
     .map((kind) => {
       const indices = s.tiles.flatMap((t, i) =>
         t.plannedRoom === kind || (kind === 'dig' && t.marked && !t.plannedRoom)
@@ -1209,10 +1226,7 @@ export default function App() {
                   : `Angriff ${s.wave + 1} von 4`}
               </span>
               <b>
-                {s.wave === 4
-                  ? s.units.filter((u) => u.kind === 'invader').length +
-                    ' Gegner'
-                  : clock(next)}
+                {s.wave === 4 ? hostiles(s).length + ' Gegner' : clock(next)}
               </b>
             </div>
           </div>
@@ -1270,75 +1284,134 @@ export default function App() {
               </button>
             </div>
           )}
-          {queuedOrders.length > 0 && possessed === null && (
-            <aside className="queued-orders" aria-label="Gesetzte Aufträge">
-              <h3>
-                <Layers3 size={14} />
-                AUFTRÄGE
-              </h3>
-              {queuedOrders.map((order) => (
-                <div className="queued-order" key={order.kind}>
-                  <button
-                    className="queued-order-focus"
-                    onClick={() => {
-                      changeTool(order.kind);
-                      updateConstruction({
-                        room: order.kind,
-                        indices: order.indices,
-                        dragging: false,
-                      });
-                      const first = stateRef.current.tiles[order.indices[0]];
-                      sceneRef.current?.focus(first.x, first.z);
-                    }}
+          {!selectedUnit && !construction && possessed === null && (
+            <div className="right-hud">
+              {started &&
+                (countRoom(s, 'prison') > 0 ||
+                  prisoners(s).length > 0 ||
+                  s.ritualUntil > s.time) && (
+                  <aside
+                    className="prison-ledger"
+                    aria-label="Gefangene und Rituale"
                   >
-                    <i
-                      style={{
-                        background:
-                          order.kind === 'dig'
-                            ? '#e8bb67'
-                            : ROOMS[order.kind].color,
-                      }}
-                    />
-                    <span>
-                      {order.kind === 'dig'
-                        ? 'Nur graben'
-                        : ROOMS[order.kind].name}
+                    <div className="prison-ledger-heading">
+                      <LockKeyhole size={15} />
+                      <strong>GEFANGENE</strong>
+                      <b>{prisoners(s).length}</b>
+                    </div>
+                    <div className="prison-summary">
+                      <span>Zellen</span>
+                      <b>{prisonCapacity(s)}</b>
+                      <span>Überläufer</span>
+                      <b>{s.converted}</b>
+                    </div>
+                    <div className="prison-list">
+                      {prisoners(s).map((u) => (
+                        <button
+                          key={u.id}
+                          onClick={() => selectResident(u.id)}
+                          title="Gefangenen ansehen"
+                        >
+                          <span>
+                            <LockKeyhole size={12} />
+                            {u.name} <small>#{u.id}</small>
+                          </span>
+                          <small>{u.state}</small>
+                          {u.conversion > 0 && (
+                            <Progress value={u.conversion} />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    {!prisoners(s).length && (
                       <small>
-                        {order.waitingForGold
-                          ? 'Wartet auf Baugold'
-                          : 'Geplant'}
+                        Besiegte Gegner werden in freie Zellen gebunden.
                       </small>
-                    </span>
-                    <b>{order.indices.length}</b>
-                  </button>
-                  <button
-                    className="queued-order-cancel"
-                    aria-label={`Aufträge löschen: ${order.kind === 'dig' ? 'Nur graben' : ROOMS[order.kind].name}`}
-                    onClick={() => {
-                      cancelDesignations(stateRef.current, order.indices);
-                      updateConstruction(null);
-                      refresh();
-                    }}
-                  >
-                    <X size={13} />
-                  </button>
-                </div>
-              ))}
-              <p>
-                {queuedOrders.some((order) => order.kind !== 'dig')
-                  ? 'Graben → Beanspruchen → Bauen'
-                  : 'Schürflinge graben erreichbare Felder aus.'}
-              </p>
-              {queuedOrders.some((order) => order.cost > 0) && (
-                <p>
-                  <span>Geplanter Ausbau:</span>{' '}
-                  {fmt(
-                    queuedOrders.reduce((sum, order) => sum + order.cost, 0),
-                  )}{' '}
-                  <span>Gold</span>
-                </p>
+                    )}
+                    {s.ritualUntil > s.time && (
+                      <div className="ritual-status">
+                        <Flame size={14} />
+                        <span>ASCHENSEGEN</span>
+                        <b>{clock(s.ritualUntil - s.time)}</b>
+                      </div>
+                    )}
+                  </aside>
+                )}
+              {queuedOrders.length > 0 && possessed === null && (
+                <aside className="queued-orders" aria-label="Gesetzte Aufträge">
+                  <h3>
+                    <Layers3 size={14} />
+                    AUFTRÄGE
+                  </h3>
+                  {queuedOrders.map((order) => (
+                    <div className="queued-order" key={order.kind}>
+                      <button
+                        className="queued-order-focus"
+                        onClick={() => {
+                          changeTool(order.kind);
+                          updateConstruction({
+                            room: order.kind,
+                            indices: order.indices,
+                            dragging: false,
+                          });
+                          const first =
+                            stateRef.current.tiles[order.indices[0]];
+                          sceneRef.current?.focus(first.x, first.z);
+                        }}
+                      >
+                        <i
+                          style={{
+                            background:
+                              order.kind === 'dig'
+                                ? '#e8bb67'
+                                : ROOMS[order.kind].color,
+                          }}
+                        />
+                        <span>
+                          {order.kind === 'dig'
+                            ? 'Nur graben'
+                            : ROOMS[order.kind].name}
+                          <small>
+                            {order.waitingForGold
+                              ? 'Wartet auf Baugold'
+                              : 'Geplant'}
+                          </small>
+                        </span>
+                        <b>{order.indices.length}</b>
+                      </button>
+                      <button
+                        className="queued-order-cancel"
+                        aria-label={`Aufträge löschen: ${order.kind === 'dig' ? 'Nur graben' : ROOMS[order.kind].name}`}
+                        onClick={() => {
+                          cancelDesignations(stateRef.current, order.indices);
+                          updateConstruction(null);
+                          refresh();
+                        }}
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ))}
+                  <p>
+                    {queuedOrders.some((order) => order.kind !== 'dig')
+                      ? 'Graben → Beanspruchen → Bauen'
+                      : 'Schürflinge graben erreichbare Felder aus.'}
+                  </p>
+                  {queuedOrders.some((order) => order.cost > 0) && (
+                    <p>
+                      <span>Geplanter Ausbau:</span>{' '}
+                      {fmt(
+                        queuedOrders.reduce(
+                          (sum, order) => sum + order.cost,
+                          0,
+                        ),
+                      )}{' '}
+                      <span>Gold</span>
+                    </p>
+                  )}
+                </aside>
               )}
-            </aside>
+            </div>
           )}
           {construction && constructionQuote && possessed === null && (
             <aside
@@ -1377,25 +1450,23 @@ export default function App() {
                 aria-label="Nutzung nach dem Graben"
               >
                 <small>DANACH ANLEGEN</small>
-                {(['dig', ...illustratedRooms] as DesignationTool[]).map(
-                  (kind) => {
-                    const Icon = kind === 'dig' ? Pickaxe : roomIcons[kind];
-                    return (
-                      <button
-                        key={kind}
-                        title={kind === 'dig' ? 'Nur graben' : ROOMS[kind].name}
-                        aria-label={
-                          kind === 'dig' ? 'Nur graben' : ROOMS[kind].name
-                        }
-                        aria-pressed={construction.room === kind}
-                        disabled={kind === 'forge' && !s.unlocked}
-                        onClick={() => changeTool(kind)}
-                      >
-                        <Icon size={18} />
-                      </button>
-                    );
-                  },
-                )}
+                {(['dig', ...ROOM_KEYS] as DesignationTool[]).map((kind) => {
+                  const Icon = kind === 'dig' ? Pickaxe : roomIcons[kind];
+                  return (
+                    <button
+                      key={kind}
+                      title={kind === 'dig' ? 'Nur graben' : ROOMS[kind].name}
+                      aria-label={
+                        kind === 'dig' ? 'Nur graben' : ROOMS[kind].name
+                      }
+                      aria-pressed={construction.room === kind}
+                      disabled={roomLocked(s, kind)}
+                      onClick={() => changeTool(kind)}
+                    >
+                      <Icon size={18} />
+                    </button>
+                  );
+                })}
               </div>
               <div className="construction-counts" aria-live="polite">
                 <span className="valid">
@@ -1529,18 +1600,42 @@ export default function App() {
                 <span className="status-dot" />
                 {selectedUnit.state}
               </p>
-              {[
-                ['Lebenskraft', (selectedUnit.hp / selectedUnit.maxHp) * 100],
-                ['Sättigung', selectedUnit.hunger],
-                ['Energie', selectedUnit.energy],
-                ['Zufriedenheit', selectedUnit.mood],
-              ].map(([name, value]) => (
-                <div className="need" key={name}>
-                  <span>{name}</span>
-                  <Progress value={Number(value)} />
-                  <b>{Math.ceil(Number(value))}%</b>
+              {selectedUnit.prisoner && (
+                <div className="prisoner-detail">
+                  <div className="need">
+                    <span>Bekehrung</span>
+                    <Progress value={selectedUnit.conversion} />
+                    <b>{Math.floor(selectedUnit.conversion)}%</b>
+                  </div>
+                  <p>
+                    Greifen und auf einem freien Folterfeld absetzen. Ab vier
+                    Feldern übernimmt ein Runenweber die Bekehrung.
+                  </p>
+                  <button
+                    className="secondary-button"
+                    onClick={() => {
+                      changeTool('inspect');
+                      pickupResident(selectedUnit.id);
+                    }}
+                  >
+                    <Hand size={15} />
+                    Gefangenen greifen
+                  </button>
                 </div>
-              ))}
+              )}
+              {!selectedUnit.prisoner &&
+                [
+                  ['Lebenskraft', (selectedUnit.hp / selectedUnit.maxHp) * 100],
+                  ['Sättigung', selectedUnit.hunger],
+                  ['Energie', selectedUnit.energy],
+                  ['Zufriedenheit', selectedUnit.mood],
+                ].map(([name, value]) => (
+                  <div className="need" key={name}>
+                    <span>{name}</span>
+                    <Progress value={Number(value)} />
+                    <b>{Math.ceil(Number(value))}%</b>
+                  </div>
+                ))}
               {selectedUnit.kind !== 'invader' && (
                 <div className="unit-buttons">
                   <button
@@ -1635,7 +1730,7 @@ export default function App() {
               >
                 <TabsList className="build-tabs" variant="line">
                   <TabsTrigger value="rooms">
-                    <Layers3 /> Räume
+                    <Layers3 /> Räume <small>{ROOM_KEYS.length}</small>
                   </TabsTrigger>
                   <TabsTrigger value="powers">
                     <Sparkles /> Mächte
@@ -1665,13 +1760,24 @@ export default function App() {
                 })}
               </div>
             </div>
-            <div className="build-cards">
+            <div
+              className="build-cards"
+              aria-label="Räume und Mächte – für weitere Einträge scrollen"
+            >
               {items.map((t) => {
                 const m = toolMeta[t],
                   Icon = m.icon,
                   locked =
                     !s.unlocked &&
-                    ['forge', 'bolt', 'trap', 'door'].includes(t);
+                    [
+                      'forge',
+                      'bolt',
+                      'trap',
+                      'door',
+                      'torment',
+                      'ritual',
+                      'ritualBlessing',
+                    ].includes(t);
                 return (
                   <button
                     key={t}
@@ -1700,13 +1806,18 @@ export default function App() {
                     }
                   >
                     <span
-                      className={`card-visual ${t in ROOMS ? 'room-art' : illustratedPowers.includes(t) ? 'power-art' : ''}`}
+                      className={`card-visual ${illustratedRooms.includes(t as Room) ? 'room-art' : ['prison', 'torment', 'ritual'].includes(t) ? 'dark-room-art' : illustratedPowers.includes(t) ? 'power-art' : ''}`}
                       style={
-                        t in ROOMS || illustratedPowers.includes(t)
+                        ['prison', 'torment', 'ritual'].includes(t)
                           ? {
-                              backgroundPosition: `${((t in ROOMS ? illustratedRooms : illustratedPowers).indexOf(t) % 3) * 50}% ${Math.floor((t in ROOMS ? illustratedRooms : illustratedPowers).indexOf(t) / 3) * 100}%`,
+                              backgroundImage: `url(${import.meta.env.BASE_URL}art/openart/dark-rooms/${t}.webp)`,
                             }
-                          : undefined
+                          : illustratedRooms.includes(t as Room) ||
+                              illustratedPowers.includes(t)
+                            ? {
+                                backgroundPosition: `${((t in ROOMS ? illustratedRooms : illustratedPowers).indexOf(t) % 3) * 50}% ${Math.floor((t in ROOMS ? illustratedRooms : illustratedPowers).indexOf(t) / 3) * 100}%`,
+                              }
+                            : undefined
                       }
                     >
                       {!(t in ROOMS) && !illustratedPowers.includes(t) && (
@@ -1724,6 +1835,8 @@ export default function App() {
                           {ROOMS[t as Room].cost}
                           <small>/ Feld</small>
                         </>
+                      ) : t === 'ritualBlessing' && s.ritualReadyAt > s.time ? (
+                        <span>{clock(s.ritualReadyAt - s.time)}</span>
                       ) : t === 'trap' || t === 'door' ? (
                         <>
                           <span className="defence-cost" aria-hidden="true">
@@ -1895,6 +2008,16 @@ export default function App() {
                 icon: Hand,
                 title: '06 / Eingreifen',
                 text: 'Bewohner direkt anklicken und danach den Zielboden anklicken – oder mit gedrückter Maustaste ziehen und loslassen. Auch unbeanspruchter Boden ist erlaubt. Escape oder Rechtsklick setzt eine getragene Kreatur zurück. Rechtsklick auf einen freien Bewohner schlägt ihn. Porträts öffnen die Bedürfnisse; „Übernehmen“ wechselt in ihre Sicht.',
+              },
+              {
+                icon: LockKeyhole,
+                title: '07 / Gefangen nehmen',
+                text: 'Baue vor einem Angriff ein Gefängnis. Je zwei Felder halten einen besiegten Sonnenritter; die Zelle muss erreichbar und frei sein. In der Gefangenenliste öffnest du seine Details. Greife ihn und wirf ihn auf ein freies Folterfeld. Belegte Zellen können nicht verkauft werden.',
+              },
+              {
+                icon: Zap,
+                title: '08 / Dunkle Künste',
+                text: 'Nach der Runenforschung: Baue mindestens vier Folterfelder. Ein Runenweber bekehrt dort Gefangene in 75 Sekunden zu Aschewächtern. Freie Ruheplätze und vier Pilzgartenfelder sind erforderlich. Vier Ritualfelder ermöglichen unter Mächte den Aschensegen für 250 Gold: 60 Sekunden mehr Schaden, Mana und Zufriedenheit; 120 Sekunden Abklingzeit.',
               },
             ].map(({ icon: Icon, title, text }) => (
               <article key={title}>

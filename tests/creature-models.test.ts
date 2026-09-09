@@ -71,6 +71,7 @@ void test('independent creature poses share immutable geometry and retain caller
       'Schläft',
       'Isst',
       'Forscht',
+      'Leitet Folterritual',
       'In der Hand',
     ]) {
       for (let t = 0; t < 1; t += 0.05) a.animate(t + 10, 0, job, 0.5);

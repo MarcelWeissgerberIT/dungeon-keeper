@@ -1,7 +1,16 @@
 import { freshMapSeed } from './seeds';
 
 export const SIZE = 27;
-export type Room = 'vault' | 'rest' | 'food' | 'training' | 'library' | 'forge';
+export type Room =
+  | 'vault'
+  | 'rest'
+  | 'food'
+  | 'training'
+  | 'library'
+  | 'forge'
+  | 'prison'
+  | 'torment'
+  | 'ritual';
 export type TileKind =
   | 'rock'
   | 'earth'
@@ -21,6 +30,7 @@ export type Tool =
   | 'worker'
   | 'trap'
   | 'door'
+  | 'ritualBlessing'
   | Room;
 export interface Tile {
   x: number;
@@ -58,6 +68,8 @@ export interface Unit {
   cooldown: number;
   wage: number;
   dropTimer: number;
+  prisoner: boolean;
+  conversion: number;
 }
 export interface Message {
   id: number;
@@ -68,7 +80,16 @@ export interface Message {
 export interface Effect {
   x: number;
   z: number;
-  type: 'dig' | 'gold' | 'heal' | 'bolt' | 'hit' | 'spawn';
+  type:
+    | 'dig'
+    | 'gold'
+    | 'heal'
+    | 'bolt'
+    | 'hit'
+    | 'spawn'
+    | 'capture'
+    | 'torment'
+    | 'ritual';
   life: number;
 }
 export interface GameState {
@@ -102,6 +123,10 @@ export interface GameState {
   tutorial: number;
   portalClaimed: boolean;
   lastSave: number;
+  captured: number;
+  converted: number;
+  ritualUntil: number;
+  ritualReadyAt: number;
 }
 export const ROOMS: Record<
   Room,
@@ -161,7 +186,34 @@ export const ROOMS: Record<
       'Bewohner schmieden Vorräte für Fangrunen und Schutzpforten. Benötigt abgeschlossene Forschung.',
     short: 'Verteidigung fertigen',
   },
+  prison: {
+    name: 'Gefängnis',
+    cost: 160,
+    color: '#839aa8',
+    description:
+      'Je zwei Gefängnisfelder halten einen besiegten Sonnenritter fest. Nur erreichbare, freie Zellen fangen Gegner. Gefangene kannst du greifen und in die Folterkammer versetzen.',
+    short: 'Feinde gefangen nehmen',
+  },
+  torment: {
+    name: 'Folterkammer',
+    cost: 240,
+    color: '#b564ba',
+    description:
+      'Ab vier Feldern: Runenweber brechen den Widerstand eines Gefangenen in 75 Sekunden. Er wird zum Aschewächter; benötigt einen freien Ruheplatz und vier Pilzgartenfelder. Forschung erforderlich.',
+    short: 'Gefangene bekehren',
+  },
+  ritual: {
+    name: 'Ritualkammer',
+    cost: 220,
+    color: '#e19a4b',
+    description:
+      'Vier Felder ermöglichen den Aschensegen: 60 Sekunden mehr Kampfkraft, Mana und Zufriedenheit. Auslösen unter Mächte für 250 Gold; 120 Sekunden Abklingzeit. Forschung erforderlich.',
+    short: 'Aschensegen entfesseln',
+  },
 };
+export const ROOM_KEYS = Object.keys(ROOMS) as Room[];
+export const roomLocked = (s: GameState, r: string) =>
+  !s.unlocked && ['forge', 'torment', 'ritual'].includes(r);
 export const NAMES: Record<UnitKind, string> = {
   worker: 'Schürfling',
   guard: 'Aschewächter',
@@ -200,6 +252,11 @@ export const army = (s: GameState) =>
   s.units.filter((u) => u.kind !== 'worker' && u.kind !== 'invader');
 export const creatures = (s: GameState) =>
   s.units.filter((u) => u.kind !== 'invader');
+export const prisoners = (s: GameState) => s.units.filter((u) => u.prisoner);
+export const hostiles = (s: GameState) =>
+  s.units.filter((u) => u.kind === 'invader' && !u.prisoner);
+export const prisonCapacity = (s: GameState) =>
+  Math.floor(countRoom(s, 'prison') / 2);
 export const coreIndex = idx(13, 14);
 function random(seed: number) {
   let a = seed >>> 0;
@@ -233,6 +290,8 @@ export function spawn(
     id: ++s.id,
     name: NAMES[kind],
     kind,
+    prisoner: false,
+    conversion: 0,
     x,
     z,
     hp: health,
@@ -291,6 +350,10 @@ export function createGame(
     tutorial: 0,
     portalClaimed: true,
     lastSave: 0,
+    captured: 0,
+    converted: 0,
+    ritualUntil: 0,
+    ritualReadyAt: 0,
   };
   for (let z = 0; z < SIZE; z++)
     for (let x = 0; x < SIZE; x++) {
@@ -437,6 +500,8 @@ export function roomBuildProblem(
   if (t.room || t.trap || t.door) return 'Dieses Feld ist bereits bebaut.';
   if (room === 'forge' && !s.unlocked)
     return 'Die Werkstatt benötigt abgeschlossene Forschung.';
+  if (roomLocked(s, room))
+    return 'Dieser Raum benötigt abgeschlossene Forschung.';
   return null;
 }
 export function applyTool(
@@ -447,6 +512,7 @@ export function applyTool(
   const t = s.tiles[i];
   if (!t || s.status !== 'playing') return { ok: false };
   if (tool === 'inspect') return { ok: true };
+  if (tool === 'ritualBlessing') return invokeRitual(s);
   if (tool === 'dig') {
     if (!t.seen)
       return { ok: false, message: 'Dieses Gebiet ist noch nicht erkundet.' };
@@ -491,7 +557,10 @@ export function applyTool(
       };
     if (s.mana < 45) return { ok: false, message: 'Du benötigst 45 Mana.' };
     const targets = s.units.filter(
-      (u) => u.kind === 'invader' && Math.hypot(u.x - t.x, u.z - t.z) < 2.6,
+      (u) =>
+        u.kind === 'invader' &&
+        !u.prisoner &&
+        Math.hypot(u.x - t.x, u.z - t.z) < 2.6,
     );
     if (!targets.length)
       return { ok: false, message: 'In diesem Gebiet stehen keine Gegner.' };
@@ -523,6 +592,21 @@ export function applyTool(
     return { ok: true };
   }
   if (tool === 'sell') {
+    if (prisoners(s).some((u) => idx(Math.round(u.x), Math.round(u.z)) === i))
+      return {
+        ok: false,
+        message: 'Versetze zuerst den Gefangenen auf diesem Feld.',
+      };
+    if (
+      t.room === 'prison' &&
+      prisoners(s).filter(
+        (u) => s.tiles[idx(Math.round(u.x), Math.round(u.z))].room === 'prison',
+      ).length > Math.floor((countRoom(s, 'prison') - 1) / 2)
+    )
+      return {
+        ok: false,
+        message: 'Für die Gefangenen werden diese Zellen noch benötigt.',
+      };
     let refund = 0;
     if (t.room) {
       refund = ROOMS[t.room].cost * 0.5;
@@ -579,7 +663,7 @@ export function grabUnit(s: GameState, id: number) {
     s.heldUnitId !== null ||
     !u ||
     u.hp <= 0 ||
-    u.kind === 'invader'
+    (u.kind === 'invader' && !u.prisoner)
   )
     return false;
   s.heldUnitId = id;
@@ -603,6 +687,8 @@ export function cancelGrab(s: GameState) {
 
 export function canDropUnit(s: GameState, i: number) {
   const t = s.tiles[i];
+  const u = s.units.find((u) => u.id === s.heldUnitId);
+  if (u?.prisoner) return validPrisonerCell(s, u, i);
   return !!t && t.seen && walkable(t);
 }
 
@@ -625,7 +711,9 @@ export function slapUnit(s: GameState, id: number) {
 
 export function dropUnit(s: GameState, id: number, i: number) {
   const t = s.tiles[i],
-    u = s.units.find((u) => u.id === id && u.kind !== 'invader');
+    u = s.units.find(
+      (u) => u.id === id && (u.kind !== 'invader' || u.prisoner),
+    );
   if (!u || s.heldUnitId !== id || !canDropUnit(s, i)) return false;
   s.heldUnitId = null;
   u.x = t.x;
@@ -636,6 +724,134 @@ export function dropUnit(s: GameState, id: number, i: number) {
   u.dropTimer = 0.45;
   u.energy = Math.max(0, u.energy - 3);
   return true;
+}
+function validPrisonerCell(s: GameState, u: Unit, i: number) {
+  const t = s.tiles[i];
+  if (
+    !t ||
+    !t.seen ||
+    !t.owned ||
+    t.kind !== 'floor' ||
+    !['prison', 'torment'].includes(t.room ?? '')
+  )
+    return false;
+  const others = prisoners(s).filter((p) => p.id !== u.id);
+  if (others.some((p) => idx(Math.round(p.x), Math.round(p.z)) === i))
+    return false;
+  return (
+    t.room === 'torment' ||
+    others.filter(
+      (p) => s.tiles[idx(Math.round(p.x), Math.round(p.z))].room === 'prison',
+    ).length < prisonCapacity(s)
+  );
+}
+function captureDefeated(s: GameState, u: Unit) {
+  if (u.prisoner) return;
+  const goal = nearest(
+    s,
+    u,
+    (t) => t.room === 'prison' && validPrisonerCell(s, u, idx(t.x, t.z)),
+  );
+  if (goal === null) return;
+  const t = s.tiles[goal];
+  u.prisoner = true;
+  u.conversion = 0;
+  u.hp = Math.max(1, Math.ceil(u.maxHp * 0.35));
+  u.x = t.x;
+  u.z = t.z;
+  u.path = [];
+  u.target = null;
+  u.cooldown = 0;
+  u.dropTimer = 0;
+  u.state = 'Gefangen';
+  s.captured++;
+  effect(s, t, 'capture');
+  log(s, 'Ein Sonnenritter wurde im Gefängnis gebunden.', 'good');
+}
+function tickPrisoners(s: GameState, dt: number, controlledId: number | null) {
+  for (const u of prisoners(s)) {
+    if (u.id === s.heldUnitId) continue;
+    if (u.dropTimer > 0) {
+      u.dropTimer = Math.max(0, u.dropTimer - dt);
+      continue;
+    }
+    const t = s.tiles[idx(Math.round(u.x), Math.round(u.z))];
+    if (t.room !== 'torment') {
+      u.state = 'Gefangen';
+      continue;
+    }
+    if (!s.unlocked || countRoom(s, 'torment') < 4) {
+      u.state = 'Benötigt vier Folterfelder';
+      continue;
+    }
+    const keeper = s.units.some(
+      (v) =>
+        v.kind === 'scholar' &&
+        v.hp > 0 &&
+        v.id !== s.heldUnitId &&
+        v.id !== controlledId &&
+        v.dropTimer <= 0 &&
+        v.state === 'Leitet Folterritual' &&
+        Math.hypot(v.x - u.x, v.z - u.z) < 0.65,
+    );
+    if (!keeper) {
+      u.state = 'Wartet auf Runenweber';
+      continue;
+    }
+    u.state = 'Widerstand schwindet';
+    u.conversion = Math.min(100, u.conversion + (dt * 100) / 75);
+    s.mana = Math.min(200, s.mana + dt * 0.4);
+    if (Math.floor(s.time / 5) !== Math.floor((s.time - dt) / 5))
+      effect(s, t, 'torment');
+    if (u.conversion < 100) continue;
+    if (
+      army(s).length >= Math.floor(countRoom(s, 'rest') / 2) ||
+      countRoom(s, 'food') < 4
+    ) {
+      u.state = 'Wartet auf Ruheplatz und Nahrung';
+      continue;
+    }
+    u.prisoner = false;
+    u.kind = 'guard';
+    u.name = NAMES.guard;
+    u.maxHp = 160 * (1 + (u.level - 1) * 0.22);
+    u.hp = u.maxHp;
+    u.hunger = 75;
+    u.energy = 75;
+    u.mood = 70;
+    u.wage = 35;
+    u.xp = 0;
+    u.carry = 0;
+    u.path = [];
+    u.target = null;
+    u.state = 'Übergelaufen';
+    u.dropTimer = 0.45;
+    s.converted++;
+    effect(s, t, 'ritual');
+    log(s, 'Ein Sonnenritter hat sich deinem Reich angeschlossen.', 'good');
+  }
+}
+export function invokeRitual(s: GameState): { ok: boolean; message: string } {
+  if (s.status !== 'playing')
+    return { ok: false, message: 'Diese Expedition ist beendet.' };
+  if (!s.unlocked || countRoom(s, 'ritual') < 4)
+    return {
+      ok: false,
+      message: 'Erforsche die Runen und baue vier Ritualfelder.',
+    };
+  if (s.time < s.ritualReadyAt)
+    return { ok: false, message: 'Der Aschensegen klingt noch ab.' };
+  if (s.gold < 250) return { ok: false, message: 'Du benötigst 250 Gold.' };
+  s.gold -= 250;
+  s.ritualUntil = s.time + 60;
+  s.ritualReadyAt = s.time + 120;
+  const altar = s.tiles.find((t) => t.room === 'ritual')!;
+  effect(s, altar, 'ritual');
+  log(s, 'Aschensegen: Dein Reich erstarkt für 60 Sekunden.', 'good');
+  return {
+    ok: true,
+    message: 'Aschensegen: Dein Reich erstarkt für 60 Sekunden.',
+  };
 }
 function moveTo(
   s: GameState,
@@ -839,6 +1055,7 @@ function combat(s: GameState, u: Unit, dt: number): boolean {
   const foes = s.units.filter(
     (v) =>
       v.hp > 0 &&
+      !v.prisoner &&
       v.id !== s.heldUnitId &&
       v.dropTimer <= 0 &&
       (u.kind === 'invader' ? v.kind !== 'invader' : v.kind === 'invader'),
@@ -862,7 +1079,8 @@ function combat(s: GameState, u: Unit, dt: number): boolean {
       const damage =
         { worker: 4, guard: 21, scholar: 17, brute: 35, invader: 15 }[u.kind] *
         (1 + (u.level - 1) * 0.28);
-      enemy.hp -= damage;
+      enemy.hp -=
+        damage * (u.kind !== 'invader' && s.ritualUntil > s.time ? 1.2 : 1);
       u.cooldown = 0.9;
       s.effects.push({
         x: enemy.x,
@@ -907,6 +1125,23 @@ function residentTick(s: GameState, u: Unit, dt: number) {
   if (u.kind === 'worker') {
     workerTick(s, u, dt);
     return;
+  }
+  if (u.kind === 'scholar' && s.unlocked && countRoom(s, 'torment') >= 4) {
+    const goal = nearest(
+      s,
+      u,
+      (t) =>
+        t.room === 'torment' &&
+        t.owned &&
+        prisoners(s).some(
+          (p) => p.id !== s.heldUnitId && p.x === t.x && p.z === t.z,
+        ),
+    );
+    if (goal !== null) {
+      u.state = 'Leitet Folterritual';
+      moveTo(s, u, goal, dt);
+      return;
+    }
   }
   if (
     s.unlocked &&
@@ -956,11 +1191,13 @@ export function tick(
   dt = Math.min(dt, 0.25);
   s.time += dt;
   s.mana = Math.min(200, s.mana + dt * 0.7);
+  if (s.ritualUntil > s.time) s.mana = Math.min(200, s.mana + dt * 2);
   s.effects = s.effects.filter((e) => (e.life -= dt) > 0);
   for (const t of s.tiles)
     if (t.trapCooldown > 0) t.trapCooldown = Math.max(0, t.trapCooldown - dt);
   for (const u of s.units) {
     if (u.hp <= 0 || u.id === s.heldUnitId) continue;
+    if (u.prisoner) continue;
     if (u.dropTimer > 0) {
       u.dropTimer = Math.max(0, u.dropTimer - dt);
       continue;
@@ -977,6 +1214,7 @@ export function tick(
         ),
       );
       if (u.hunger === 0) u.hp -= dt * 0.6;
+      if (s.ritualUntil > s.time) u.mood = Math.min(100, u.mood + dt * 0.4);
     }
     if (u.kind === 'invader') {
       const t = s.tiles[idx(Math.round(u.x), Math.round(u.z))];
@@ -998,7 +1236,10 @@ export function tick(
     }
     if (u.id === controlledId) {
       const close = s.units.some(
-        (v) => v.kind === 'invader' && Math.hypot(v.x - u.x, v.z - u.z) < 1.2,
+        (v) =>
+          v.kind === 'invader' &&
+          !v.prisoner &&
+          Math.hypot(v.x - u.x, v.z - u.z) < 1.2,
       );
       if (close) combat(s, u, dt);
       continue;
@@ -1022,12 +1263,14 @@ export function tick(
   }
   const dead = s.units.filter((u) => u.hp <= 0);
   for (const u of dead) {
-    if (u.kind === 'invader') {
+    if (u.kind === 'invader' && !u.prisoner) {
       s.kills++;
       s.gold = Math.min(capacity(s), s.gold + 90);
+      captureDefeated(s, u);
     } else log(s, `${u.name} ist gefallen.`, 'warn');
   }
   s.units = s.units.filter((u) => u.hp > 0);
+  tickPrisoners(s, dt, controlledId);
   if (s.time >= s.nextArrival) {
     s.nextArrival = s.time + 38;
     const roomCapacity = Math.floor(countRoom(s, 'rest') / 2);
@@ -1103,7 +1346,7 @@ export function tick(
     s.coreHp = 0;
     s.status = 'lost';
     log(s, 'Die letzte Glut ist erloschen.', 'warn');
-  } else if (s.wave === 4 && !s.units.some((u) => u.kind === 'invader')) {
+  } else if (s.wave === 4 && !hostiles(s).length) {
     s.status = 'won';
     log(s, 'Der Sonnenmarsch ist gebrochen. Die Tiefe gehört dir.', 'good');
   }
@@ -1147,6 +1390,28 @@ export function deserialize(raw: string): GameState | null {
     )
       return null;
     const finite = (n: unknown) => typeof n === 'number' && Number.isFinite(n);
+    for (const key of [
+      'captured',
+      'converted',
+      'ritualUntil',
+      'ritualReadyAt',
+    ]) {
+      if (s[key] === undefined) s[key] = 0;
+      if (!finite(s[key]) || s[key] < 0 || s[key] > 100000000) return null;
+    }
+    for (const u of s.units) {
+      if (!u) return null;
+      if (u.prisoner === undefined) u.prisoner = false;
+      if (u.conversion === undefined) u.conversion = 0;
+      if (
+        typeof u.prisoner !== 'boolean' ||
+        !finite(u.conversion) ||
+        u.conversion < 0 ||
+        u.conversion > 100 ||
+        (u.prisoner && u.kind !== 'invader')
+      )
+        return null;
+    }
     for (const key of [
       'gold',
       'mana',
@@ -1295,6 +1560,38 @@ export function deserialize(raw: string): GameState | null {
     )
       return null;
     if (typeof s.unlocked !== 'boolean' || typeof s.portalClaimed !== 'boolean')
+      return null;
+    if (
+      s.ritualUntil > s.time + 60.001 ||
+      s.ritualReadyAt > s.time + 120.001 ||
+      s.ritualUntil > s.ritualReadyAt ||
+      !Number.isInteger(s.captured) ||
+      !Number.isInteger(s.converted)
+    )
+      return null;
+    const occupiedCells = new Set<number>();
+    for (const u of prisoners(s)) {
+      if (u.hp <= 0) return null;
+      const i = idx(Math.round(u.x), Math.round(u.z)),
+        t = s.tiles[i];
+      if (
+        !t ||
+        !t.owned ||
+        !t.seen ||
+        t.kind !== 'floor' ||
+        !['prison', 'torment'].includes(t.room ?? '') ||
+        occupiedCells.has(i) ||
+        u.x !== t.x ||
+        u.z !== t.z
+      )
+        return null;
+      occupiedCells.add(i);
+    }
+    if (
+      prisoners(s).filter(
+        (u) => s.tiles[idx(Math.round(u.x), Math.round(u.z))].room === 'prison',
+      ).length > prisonCapacity(s)
+    )
       return null;
     s.tiles.forEach((t: Tile) => {
       t.trapCooldown = 0;

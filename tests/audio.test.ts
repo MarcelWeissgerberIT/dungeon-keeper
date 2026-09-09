@@ -14,6 +14,7 @@ class Param {
   }
 }
 class Node {
+  connections: unknown[] = [];
   gain = new Param();
   frequency = new Param();
   pan = new Param();
@@ -21,6 +22,7 @@ class Node {
   knee = new Param();
   ratio = new Param();
   connect(node: unknown) {
+    this.connections.push(node);
     return node;
   }
   disconnect() {}
@@ -33,6 +35,7 @@ class AudioContextMock {
   state = 'running';
   destination = new Node();
   gains: Node[] = [];
+  panners: Node[] = [];
   static latest: AudioContextMock;
   constructor() {
     AudioContextMock.latest = this;
@@ -65,7 +68,9 @@ class AudioContextMock {
     return new Node();
   }
   createStereoPanner() {
-    return new Node();
+    const node = new Node();
+    this.panners.push(node);
+    return node;
   }
   resume() {
     return Promise.resolve();
@@ -96,6 +101,12 @@ test('music and effects volumes and mutes are independent audio gains', () => {
     assert.equal(effects.gain.value, 0);
     audio.setPaused(false);
     assert.ok(music.gain.value > 0);
+    const first = AudioContextMock.latest.panners.length;
+    for (const cue of ['capture', 'torment', 'ritual'] as const) audio.cue(cue);
+    const roomSounds = AudioContextMock.latest.panners.slice(first);
+    assert.equal(roomSounds.length, 3);
+    for (const panner of roomSounds)
+      assert.deepEqual(panner.connections, [effects]);
   } finally {
     audio.dispose();
   }

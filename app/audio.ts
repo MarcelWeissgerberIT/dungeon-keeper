@@ -8,7 +8,10 @@ export type SoundCue =
   | 'heal'
   | 'bolt'
   | 'hit'
-  | 'spawn';
+  | 'spawn'
+  | 'capture'
+  | 'torment'
+  | 'ritual';
 export interface AudioSettings {
   musicVolume: number;
   effectsVolume: number;
@@ -267,6 +270,9 @@ export class DungeonAudio {
       bolt: 0.18,
       hit: 0.19,
       spawn: 0.5,
+      capture: 0.6,
+      torment: 2,
+      ritual: 1.5,
     }[cue];
     if (now - (this.lastCue.get(cue) ?? -99) < minimum) return;
     this.lastCue.set(cue, now);
@@ -348,6 +354,20 @@ export class DungeonAudio {
     } else if (cue === 'bolt') {
       noise(0.35, 3500, 0.23);
       tone(90, 800, 0.28, 0.08, 'sawtooth');
+    } else if (cue === 'capture') {
+      noise(0.16, 2600, 0.07);
+      [620, 930, 1240].forEach((f, i) =>
+        tone(f, f * 0.7, 0.3, 0.055, 'triangle', i * 0.05),
+      );
+      tone(85, 42, 0.8, 0.09, 'sine');
+    } else if (cue === 'torment') {
+      tone(110, 83, 1.1, 0.06, 'triangle');
+      tone(164, 123, 0.9, 0.045, 'sine', 0.12);
+      noise(0.2, 1800, 0.025);
+    } else if (cue === 'ritual') {
+      [65.4, 98, 130.8, 196].forEach((f, i) =>
+        tone(f, f * 1.04, 2.1, 0.05, 'sine', i * 0.16),
+      );
     } else if (cue === 'warn') {
       [73.42, 110, 146.83].forEach((f) =>
         tone(f, f * 0.99, 1.4, 0.06, 'triangle'),
