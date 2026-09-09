@@ -28,6 +28,7 @@ export interface SceneControls {
   possess: (id: number | null) => void;
   getPossessed: () => number | null;
   cancelDrag: () => void;
+  setAccessibleLabel: (label: string) => void;
 }
 export interface SceneOptions {
   state: () => GameState;
@@ -1451,6 +1452,8 @@ export function mountScene(
     },
     getPossessed: () => possessed,
     cancelDrag,
+    setAccessibleLabel: (label) =>
+      renderer.domElement.setAttribute('aria-label', label),
     dispose: () => {
       disposed = true;
       cancelAnimationFrame(frame);

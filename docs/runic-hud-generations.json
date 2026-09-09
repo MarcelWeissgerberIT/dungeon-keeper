@@ -1,0 +1,76 @@
+{
+  "product": "Kluftkrone",
+  "date": "2026-09-09",
+  "provider": "https://mcp.openart.ai/mcp",
+  "note": "Three original text-to-image generations. No reference images or typefaces uploaded. Runtime images use lossless WebP; dimensions and decoded RGBA pixels match the original PNGs.",
+  "generations": [
+    {
+      "name": "menu-frame",
+      "historyId": "058rFoCFGawFOQcGBWPb",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "imageCount": 1,
+        "resolutionTier": "1k",
+        "aspectRatio": "1:1",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false,
+        "prompt": "Original game HUD artwork for our own dark subterranean fantasy strategy game Kluftkrone. A coordinated tactile interface material family: rough hand-chiseled charcoal basalt, age-darkened bronze and oxidized copper inlays, sparse tiny amber mineral-lit abstract rune-like notches, restrained moss-gray mineral wear, deep soot-black recesses. Strong stepped geometric corners and bold carved edges. The clarity and chunky legibility of a 1990s fantasy strategy interface, newly crafted with rich modern material detail. Original geometric ornament only, no copied intellectual property, no existing game motifs. Flat frontal orthographic view directly perpendicular to the surface. No perspective, no camera tilt, no scene, no objects sitting on a table, no cast shadow outside the asset. Even studio-flat illumination with subtle shallow bevel shading in the material. Absolutely no text, letters, numbers, words, labels, logo, watermark, symbols in the central writing area, or user-interface mockup. Create ONE SQUARE EDGE-TO-EDGE MENU PANEL TEXTURE suitable for CSS 9-slice scaling. The image itself IS the panel. A thick continuous carved basalt and bronze frame occupies the outer 18 percent of the width along EACH of all four sides; all four corners are fully present. The frame is flush with the canvas edges and reaches every image boundary: NO exterior background, NO padding, NO empty margin, NO freestanding box. Make the four corner ornaments compact, stepped, symmetric and contained within the 18-percent corner squares. Straight top, bottom, left and right edge bands should be consistent in thickness, quiet and repeatable, with balanced horizontal and vertical material. The inner 64-percent square is a single very dark quiet almost-black stone face, flat and unobstructed, with only faint fine grain so game menu text can be placed over it. Main outer frame: rough basalt slab, copper inner lip, a few tiny engraved amber notches restricted to the corners. No central decoration, no dividers, no buttons, no holes, no transparency, no lighting vignette. Read as one substantial carved HUD menu frame viewed perfectly straight-on."
+      },
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "file": "public/art/openart/runic-hud/menu-frame.webp",
+      "sourceSha256": "ab0e24f843012adf8f53c788ac4a78ad6945ba0dc12b9eb0529806f2872ee657",
+      "outputSha256": "70c7845a5fe255549f5db0b2e02a337a656d2b1902a57e532f0dd368ab18c14e"
+    },
+    {
+      "name": "blank-button",
+      "historyId": "EbYwD1WVzwTOHpgdgyuH",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "imageCount": 1,
+        "resolutionTier": "1k",
+        "lockAspectRatio": false,
+        "customWidth": 1536,
+        "customHeight": 384,
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false,
+        "prompt": "Original game HUD artwork for our own dark subterranean fantasy strategy game Kluftkrone. A coordinated tactile interface material family: rough hand-chiseled charcoal basalt, age-darkened bronze and oxidized copper inlays, sparse tiny amber mineral-lit abstract rune-like notches, restrained moss-gray mineral wear, deep soot-black recesses. Strong stepped geometric corners and bold carved edges. The clarity and chunky legibility of a 1990s fantasy strategy interface, newly crafted with rich modern material detail. Original geometric ornament only, no copied intellectual property, no existing game motifs. Flat frontal orthographic view directly perpendicular to the surface. No perspective, no camera tilt, no scene, no objects sitting on a table, no cast shadow outside the asset. Even studio-flat illumination with subtle shallow bevel shading in the material. Absolutely no text, letters, numbers, words, labels, logo, watermark, symbols in the central writing area, or user-interface mockup. Create ONE SINGLE BLANK COMPACT HORIZONTAL GAME BUTTON, extremely wide and low, target canvas exactly 1536 pixels wide by 384 pixels tall, aspect ratio FOUR TO ONE. The image itself IS the button surface and must fill the entire image edge to edge. No outer background, no padding, no surrounding empty space. A low heavy bronze face bordered by carved charcoal basalt and a thick stepped copper rim, with compact fortified corners on the left and right. Use the same materials and ornament style as a matching basalt menu panel. Keep the upper and lower rim about 16 percent of the total button height; endcaps about 5 percent of the total width. The large central area must be blank dark desaturated charcoal iron, smooth enough for a future pixel-font caption, with very restrained worn grain. The horizontal button shape is squat and broad, never tall, never square. One button only: no atlas, no variants, no multiple states, no text or icon. Shallow readable bevels and sparse tiny amber corner notches suggest a sturdy clickable surface; there is no glow in the center. Flat frontal 2D UI texture, all four sides visible and touching the canvas edges."
+      },
+      "dimensions": [
+        1408,
+        480
+      ],
+      "file": "public/art/openart/runic-hud/blank-button.webp",
+      "sourceSha256": "2e1b2af7c4887ddf37d8c5d2c5d2f27c9ec36fd88b773d71e73b8de34578c50f",
+      "outputSha256": "d8062e072e3053c67db65b253baebdcbd0300a4fd0ab805478f7b1c432ce42a6"
+    },
+    {
+      "name": "icon-frame",
+      "historyId": "eG1g2LTMohe6gtoJ0aSA",
+      "model": "gpt-image-2-5-sunburst",
+      "mode": "text2image",
+      "params": {
+        "imageCount": 1,
+        "resolutionTier": "1k",
+        "aspectRatio": "1:1",
+        "quality": "high",
+        "outputFormat": "png",
+        "autoEnhancePrompt": false,
+        "prompt": "Original game HUD artwork for our own dark subterranean fantasy strategy game Kluftkrone. A coordinated tactile interface material family: rough hand-chiseled charcoal basalt, age-darkened bronze and oxidized copper inlays, sparse tiny amber mineral-lit abstract rune-like notches, restrained moss-gray mineral wear, deep soot-black recesses. Strong stepped geometric corners and bold carved edges. The clarity and chunky legibility of a 1990s fantasy strategy interface, newly crafted with rich modern material detail. Original geometric ornament only, no copied intellectual property, no existing game motifs. Flat frontal orthographic view directly perpendicular to the surface. No perspective, no camera tilt, no scene, no objects sitting on a table, no cast shadow outside the asset. Even studio-flat illumination with subtle shallow bevel shading in the material. Absolutely no text, letters, numbers, words, labels, logo, watermark, symbols in the central writing area, or user-interface mockup. Create ONE SQUARE EDGE-TO-EDGE BLANK ICON SLOT / ROOM TILE FIELD TEXTURE for CSS 9-slice scaling. The entire image is the slot, with NO exterior background, NO margin, NO padding and NO freestanding box. Use a deliberately slimmer frame than a menu: the outer 9 percent along EACH side is a thin but sturdy incised aged-bronze rim backed by rough basalt, flush with all canvas edges. All four corners are present, stepped and compact, with tiny copper rivets and sparse subtle amber gouges inside the corner region. The inner 82-percent square is an entirely free, very dark near-black stone recess, uniform flat illumination and faint grain, ready to receive a separate room icon later. Continuous straight edge bands with consistent width, suitable for stretching via nine-slice. One blank slot only, no item, no equipment, no pictogram, no center emblem, no text, no dividers, no grid, no atlas, no transparency. A distinct fine bronze scratch line defines the inner edge, coordinated with a heavier basalt menu frame and a broad bronze game button."
+      },
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "file": "public/art/openart/runic-hud/icon-frame.webp",
+      "sourceSha256": "aa3b0dab89fedee45e7aea8ad1ca7c734584fdfea555ab45143a3df79bd5d18f",
+      "outputSha256": "928aff2e24827ca4985dd916ba5a56ac3d90a3a30d9caa133093fe720a88ab04"
+    }
+  ]
+}

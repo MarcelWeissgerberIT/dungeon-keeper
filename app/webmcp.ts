@@ -1,4 +1,5 @@
 import { SIZE, ROOMS, type GameState, type Tool } from './game';
+import { translate, type Locale } from './i18n';
 interface Context {
   registerTool: (
     tool: {
@@ -12,11 +13,14 @@ interface Context {
     options: { signal: AbortSignal },
   ) => void | Promise<void>;
 }
-export function registerGameTools(api: {
-  state: () => GameState;
-  act: (tool: Tool, indices: number[]) => unknown;
-  pause: () => boolean;
-}) {
+export function registerGameTools(
+  api: {
+    state: () => GameState;
+    act: (tool: Tool, indices: number[]) => unknown;
+    pause: () => boolean;
+  },
+  locale: Locale = 'de',
+) {
   const context = (document as Document & { modelContext?: Context })
     .modelContext;
   if (!context?.registerTool) return () => {};
@@ -47,7 +51,7 @@ export function registerGameTools(api: {
             kind,
             x,
             z,
-            state,
+            state: translate(state, locale),
           })),
           tiles: s.tiles
             .filter((t) => t.seen)
@@ -137,7 +141,10 @@ export function registerGameTools(api: {
   for (const tool of tools)
     try {
       void Promise.resolve(
-        context.registerTool(tool, { signal: lifecycle.signal }),
+        context.registerTool(
+          { ...tool, title: translate(tool.title, locale) },
+          { signal: lifecycle.signal },
+        ),
       ).catch(() => {});
     } catch {
       /* Browsers without a working registry retain all manual controls. */

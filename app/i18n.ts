@@ -6,6 +6,17 @@ import {
 } from 'react';
 export type Locale = 'de' | 'en';
 const messages: Record<string, string> = {
+  Schließen: 'Close',
+  'Auf Deutsch umschalten': 'Switch to German',
+  'Dreidimensionale Dungeon-Karte. Ziehen zum Markieren, rechte Maustaste zum Drehen.':
+    'Three-dimensional dungeon map. Drag to designate tiles; drag the right mouse button to rotate.',
+  'Bernsteinfarbener Obelisk in einer gewaltigen unterirdischen Festung':
+    'Amber obelisk in a vast underground fortress',
+  'Baue dein Reich unter der Erde. Kluftkrone ist ein eigenständiges 3D-Dungeon-Strategiespiel mit autonomen Bewohnern, Forschung und Belagerungen.':
+    'Build your underground domain. Kluftkrone is an original 3D dungeon strategy game with autonomous creatures, research and sieges.',
+  'Reich ansehen': 'Inspect domain',
+  'Bauaufträge ausführen': 'Apply construction orders',
+  'Reich pausieren': 'Pause domain',
   'Nur graben': 'Excavate only',
   'Nutzung nach dem Graben': 'Use after excavation',
   'DANACH ANLEGEN': 'BUILD AFTERWARDS',
@@ -148,7 +159,7 @@ const messages: Record<string, string> = {
   'Umsetzen abbrechen': 'Cancel pickup',
   'Bewohnerdetails schließen': 'Close creature details',
   Lebenskraft: 'Health',
-  Sättigung: 'Hunger',
+  Sättigung: 'Fullness',
   Energie: 'Energy',
   Zufriedenheit: 'Happiness',
   Umsetzen: 'Pick up',
@@ -416,6 +427,8 @@ export function translate(text: string, locale: Locale): string {
   const stripped = text.trim();
   if (messages[stripped]) return text.replace(stripped, messages[stripped]);
   let m: RegExpMatchArray | null;
+  if ((m = text.match(/^(.+) \(([1-5])\)$/)) && messages[m[1]])
+    return `${messages[m[1]]} (${m[2]})`;
   if ((m = text.match(/^Geplant: (.+)$/)))
     return `Planned: ${translate(m[1], locale)}`;
   if ((m = text.match(/^Aufträge löschen: (.+)$/)))

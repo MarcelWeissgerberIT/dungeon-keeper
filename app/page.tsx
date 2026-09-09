@@ -106,7 +106,7 @@ import {
   type ConstructionSelection,
 } from './construction';
 import { registerGameTools } from './webmcp';
-import { translateTree, type Locale } from './i18n';
+import { translate, translateTree, type Locale } from './i18n';
 const clock = (n: number) =>
   `${Math.floor(Math.max(0, n) / 60)
     .toString()
@@ -246,9 +246,11 @@ const objectives = [
 function Minimap({
   state,
   onFocus,
+  label,
 }: {
   state: GameState;
   onFocus: (x: number, z: number) => void;
+  label: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -297,7 +299,7 @@ function Minimap({
       ref={ref}
       width={162}
       height={162}
-      aria-label="Übersichtskarte: anklicken, um die Ansicht zu zentrieren"
+      aria-label={label}
       onClick={(e) => {
         const r = e.currentTarget.getBoundingClientRect();
         onFocus(
@@ -323,6 +325,15 @@ export default function App() {
       locale === 'de'
         ? 'Kluftkrone — Herrschaft der Tiefe'
         : 'Kluftkrone — Dominion Below';
+    document
+      .querySelector('meta[name="description"]')
+      ?.setAttribute(
+        'content',
+        translate(
+          'Baue dein Reich unter der Erde. Kluftkrone ist ein eigenständiges 3D-Dungeon-Strategiespiel mit autonomen Bewohnern, Forschung und Belagerungen.',
+          locale,
+        ),
+      );
     try {
       localStorage.setItem('kluftkrone-locale', locale);
     } catch {}
@@ -590,6 +601,14 @@ export default function App() {
     slapResident,
   ]);
   useEffect(() => {
+    sceneRef.current?.setAccessibleLabel(
+      translate(
+        'Dreidimensionale Dungeon-Karte. Ziehen zum Markieren, rechte Maustaste zum Drehen.',
+        locale,
+      ),
+    );
+  }, [locale]);
+  useEffect(() => {
     pauseRef.current = !started || paused || help || settings || newGameDialog;
     speedRef.current = speed;
   }, [started, paused, help, settings, newGameDialog, speed]);
@@ -764,33 +783,38 @@ export default function App() {
   ]);
   useEffect(
     () =>
-      registerGameTools({
-        state: () => stateRef.current,
-        act: (t, indices) => {
-          if (isRoomTool(t)) {
-            const result = commitConstruction(stateRef.current, t, indices);
+      registerGameTools(
+        {
+          state: () => stateRef.current,
+          act: (t, indices) => {
+            if (isRoomTool(t)) {
+              const result = commitConstruction(stateRef.current, t, indices);
+              refresh();
+              return {
+                ok: result.built,
+                messages: result.built
+                  ? []
+                  : [translate(result.message, locale)],
+              };
+            }
+            let ok = 0;
+            const messages: string[] = [];
+            for (const i of indices) {
+              const r = applyTool(stateRef.current, t, i);
+              if (r.ok) ok++;
+              else if (r.message) messages.push(translate(r.message, locale));
+            }
             refresh();
-            return {
-              ok: result.built,
-              messages: result.built ? [] : [result.message],
-            };
-          }
-          let ok = 0;
-          const messages: string[] = [];
-          for (const i of indices) {
-            const r = applyTool(stateRef.current, t, i);
-            if (r.ok) ok++;
-            else if (r.message) messages.push(r.message);
-          }
-          refresh();
-          return { ok, messages };
+            return { ok, messages };
+          },
+          pause: () => {
+            setPaused(true);
+            return true;
+          },
         },
-        pause: () => {
-          setPaused(true);
-          return true;
-        },
-      }),
-    [refresh],
+        locale,
+      ),
+    [refresh, locale],
   );
   const startNew = () => {
     stateRef.current = createGame(
@@ -991,7 +1015,7 @@ export default function App() {
             <div className="chapter-shade" />
             <div className="chapter-copy">
               <span className="eyebrow">
-                EXPEDITION 01 <span>●</span>
+                EXPEDITION 01 <span>◆</span>
               </span>
               <h1>Die erste Glut</h1>
               <p>Unter den Aschebergen</p>
@@ -1213,6 +1237,10 @@ export default function App() {
               <>
                 <Minimap
                   state={s}
+                  label={translate(
+                    'Übersichtskarte: anklicken, um die Ansicht zu zentrieren',
+                    locale,
+                  )}
                   onFocus={(x, z) => sceneRef.current?.focus(x, z)}
                 />
                 <div className="minimap-caption">
@@ -1689,12 +1717,20 @@ export default function App() {
                       )}
                     </span>
                     <strong>{m.name}</strong>
-                    <span className="card-price">
+                    <span className="card-price" title={m.cost}>
                       {t in ROOMS ? (
                         <>
                           <Coins size={11} />
                           {ROOMS[t as Room].cost}
                           <small>/ Feld</small>
+                        </>
+                      ) : t === 'trap' || t === 'door' ? (
+                        <>
+                          <span className="defence-cost" aria-hidden="true">
+                            <Coins size={11} />
+                            150 <Hammer size={11} />1
+                          </span>
+                          <span className="sr-only">{m.cost}</span>
                         </>
                       ) : (
                         m.cost
@@ -1816,7 +1852,10 @@ export default function App() {
         </div>
       </footer>
       <Dialog open={help} onOpenChange={setHelp}>
-        <DialogContent className="game-dialog help-dialog">
+        <DialogContent
+          className="game-dialog help-dialog"
+          closeLabel={translate('Schließen', locale)}
+        >
           <DialogHeader>
             <span className="eyebrow">DAS BUCH DER TIEFE</span>
             <DialogTitle>So wächst dein Reich.</DialogTitle>
@@ -1889,7 +1928,10 @@ export default function App() {
         </DialogContent>
       </Dialog>
       <Dialog open={settings} onOpenChange={setSettings}>
-        <DialogContent className="game-dialog settings-dialog">
+        <DialogContent
+          className="game-dialog settings-dialog"
+          closeLabel={translate('Schließen', locale)}
+        >
           <DialogHeader>
             <span className="eyebrow">DEIN REICH</span>
             <DialogTitle>Einstellungen</DialogTitle>
@@ -1998,7 +2040,10 @@ export default function App() {
         </DialogContent>
       </Dialog>
       <Dialog open={newGameDialog} onOpenChange={setNewGameDialog}>
-        <DialogContent className="game-dialog settings-dialog">
+        <DialogContent
+          className="game-dialog settings-dialog"
+          closeLabel={translate('Schließen', locale)}
+        >
           <DialogHeader>
             <span className="eyebrow">EIN NEUER ANFANG</span>
             <DialogTitle>Eine neue Glut entfachen</DialogTitle>

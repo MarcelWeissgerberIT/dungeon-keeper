@@ -13,7 +13,7 @@ Kindle the ember, designate earth and gold, and let your delvers excavate and cl
 - Healing, lightning, rally orders, three-charge snares and protective gates.
 - Direct creature drag-and-drop, slapping, possession and individual creature vocalizations.
 - Original evolving ambient score and spatial effects with **independent music and effects volume/mute controls**.
-- OpenArt terrain, illustrated furnishings and powers, a carved command HUD and original display font. Five original articulated 3D creature models have animated limbs, faces, armour and equipment.
+- OpenArt terrain, illustrated furnishings and powers, a carved command HUD and the original **Kluftkrone Runenpixel** typeface. Five original articulated 3D creature models have animated limbs, faces, armour and equipment.
 - A fresh random map seed on every page load and new expedition; loading a save retains its world. The seed is shown in Settings.
 - Local autosave every 30 seconds, manual save/load, pause and 1×/2×/3× speed.
 - A German/English language switch. Desktop keyboard/mouse recommended; compact touch HUD supported.
@@ -54,3 +54,11 @@ Orders remain visible in the dungeon, minimap and order list. Delvers automatica
 With Inspect, Excavate or a room tool, click a visible resident to lift it, then click explored open ground to drop it. Alternatively, drag the resident and release over the destination. Green marks a valid landing tile; red means blocked ground. Unclaimed and disconnected open ground are allowed. Invalid or off-canvas drops keep the resident in hand. **Escape**, right-click, changing tools or cancelling returns it to its pickup position. **Right-click a resident on the ground to slap it**, with recoil and a creature voice. It loses a little health and happiness and gains a small energy boost. Dragging the right button rotates the camera without slapping. Creature portraits still open needs, slapping and possession.
 
 A held creature leaves the world simulation: no walking, work or combat, and no minimap dot at its old location. It remains part of your population and payroll. Saving while holding it records it safely at its pickup location. Existing saves remain compatible.
+
+### Original runic pixel HUD
+
+The game now uses **Kluftkrone Runenpixel**, a newly authored font built from explicit binary glyph drawings in `scripts/build_runenpixel.py`. No pre-existing typeface is imported or traced. It includes real lowercase letters, German accents/ß, figures and HUD symbols. At 14/28/42 CSS pixels its 100-unit grid aligns with whole pixels. [Font design and editable source](docs/RUNENPIXEL.md) · [Font specimen](docs/fonts/runenpixel-specimen.png).
+
+Three new original OpenArt images supply the menu frame, broad button face and icon/room sockets. Their corners remain intact as the edges stretch to fit different menus and translated labels. Hover, pressed, selected, disabled and keyboard-focus states use the same materials. Settings, audio sliders, room orders, creature details and the main command HUD share the new skin. The original gameplay, saves, DE/EN switch and independent audio channels remain available. [OpenArt prompts and provenance](docs/runic-hud-generations.json).
+
+Die vollständige Oberfläche ist über **DE / EN oben rechts** auf Deutsch oder Englisch umschaltbar: Spielanleitung, Bauplanung, Kreaturenstatus, Spielmeldungen, Einstellungen und Tooltips. Die Sprache bleibt auf diesem Gerät gespeichert und lässt sich während einer Expedition wechseln. Die eigene Runenpixel-Schrift unterstützt beide Sprachen.

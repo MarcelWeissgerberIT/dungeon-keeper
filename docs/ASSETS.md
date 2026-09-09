@@ -33,4 +33,16 @@ All music, ambience, effects and creature voices are synthesized by original cod
 
 ## Typography
 
-The original Kluftkrone Inscribed font is used for display labels and headings. Body text uses local system fonts for readability. The font source and authorship record are included alongside the font assets.
+The active HUD uses the original Kluftkrone Runenpixel typeface. Every base glyph is an explicit, independently authored pixel drawing in scripts/build_runenpixel.py; no font is used as design input. The previous Kluftkrone Inscribed assets remain archived in the repository. See RUNENPIXEL.md for source, character coverage and the font license.
+
+## Runic menu and button set — 2026-09-09
+
+Three additional original images were generated through the authenticated OpenArt MCP connection, with original text prompts and no uploaded reference images. Exact prompts, parameters, generation IDs and source/output hashes are recorded in [runic-hud-generations.json](runic-hud-generations.json). No authentication data, account records or temporary resource URLs are shipped.
+
+| Runtime asset | Use | Dimensions |
+| --- | --- | --- |
+| `public/art/openart/runic-hud/menu-frame.webp` | Carved basalt/bronze menu borders, main column and framed minimap |1024×1024|
+| `public/art/openart/runic-hud/blank-button.webp` | Blank wide stone/bronze buttons, translated labels overlaid as real text |1408×480|
+| `public/art/openart/runic-hud/icon-frame.webp` | Room sockets, smaller controls and slider/toggle faces |1024×1024|
+
+Lossless WebP encoding preserves the dimensions and decoded RGBA pixels of the original PNGs; equality was checked. The assets contain no lettering. `app/rune-hud.css` uses nine-slice borders with source slices 160, 140/160 and 144, respectively. The authored pixel font supplies all visible text independently of OpenArt.

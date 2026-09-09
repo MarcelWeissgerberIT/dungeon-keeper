@@ -1,0 +1,999 @@
+/* Original runic pixel typography + OpenArt nine-slice game surfaces.
+   These frames scale their edge strips while preserving the carved corners. */
+@font-face {
+  font-family: 'Kluftkrone Runenpixel';
+  src: url('/fonts/KluftkroneRunenpixel-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+:root {
+  --rune-font: 'Kluftkrone Runenpixel', monospace;
+  --font-heading: var(--rune-font);
+  --rune-panel: url('/art/openart/runic-hud/menu-frame.webp');
+  --rune-button: url('/art/openart/runic-hud/blank-button.webp');
+  --rune-slot: url('/art/openart/runic-hud/icon-frame.webp');
+  --foreground: #e4d7b9;
+  --muted-foreground: #c0b49b;
+  --gold: #f2c779;
+  font-family: var(--rune-font);
+}
+.game-shell,
+.game-dialog,
+.game-shell *,
+.game-dialog * {
+  font-family: var(--rune-font) !important;
+  font-synthesis: none;
+  font-kerning: none;
+}
+.game-shell,
+.game-dialog {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #e4d7b9;
+  text-shadow: 1px 1px 0 #050403;
+}
+.game-shell {
+  --command-width: 320px;
+  --hud-map-top: 52px;
+  --hud-map-size: 154px;
+  --hud-resources-top: 216px;
+  --hud-core-top: 302px;
+  --hud-dock-top: 340px;
+  --hud-residents-top: 610px;
+}
+.game-shell::before {
+  border: 12px solid transparent;
+  border-image: var(--rune-panel) 160 / 12px stretch;
+  background:
+    linear-gradient(90deg, #08080794, #13110b88),
+    url('/art/openart/hud-stone.webp') center / cover;
+  box-shadow: 6px 0 24px #000b;
+}
+.brand {
+  left: 34px;
+  top: 7px;
+  font-size: 42px;
+  line-height: 1;
+  letter-spacing: 0;
+  gap: 8px;
+  color: #f0d294;
+}
+.brand-mark {
+  width: 22px;
+}
+.brand-mark svg {
+  width: 22px;
+  height: 25px;
+}
+
+/* Major menus, orders and creature inspectors share the same carved frame. */
+.game-dialog {
+  border: 26px solid transparent !important;
+  border-image: var(--rune-panel) 160 fill / 26px stretch !important;
+  border-radius: 0 !important;
+  background: #14120e !important;
+  padding: 20px !important;
+  gap: 18px !important;
+  color: #e4d7b9;
+  box-shadow: 0 20px 100px #000d !important;
+  max-height: calc(100dvh - 32px) !important;
+  scrollbar-color: #907047 #16140f;
+  scrollbar-width: thin;
+}
+.game-dialog.settings-dialog {
+  max-width: 540px !important;
+}
+.game-dialog.help-dialog {
+  max-width: 850px !important;
+}
+.game-dialog.result-dialog {
+  max-width: 600px !important;
+}
+.game-dialog [data-slot='dialog-title'] {
+  margin-top: 0;
+  padding-right: 24px;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 400;
+  color: #f5d392;
+}
+.game-dialog [data-slot='dialog-description'],
+.manual-grid p {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #cfc2a6;
+}
+.game-dialog .eyebrow,
+.game-shell .eyebrow {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #b79b69;
+}
+.manual-grid {
+  gap: 22px;
+}
+.manual-grid article {
+  border-left: 2px solid #84683b;
+  padding-left: 14px;
+}
+.manual-grid h3 {
+  font-size: 20px;
+  font-weight: 400;
+  color: #eed099;
+}
+.keyboard-legend {
+  gap: 12px;
+  padding-top: 16px;
+}
+.keyboard-legend > span,
+.manual-note,
+.game-dialog .credits,
+.setting-row small,
+.audio-channel small {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #c0b298;
+}
+.game-dialog .credits {
+  font-size: 12px;
+  padding-top: 12px;
+}
+.audio-heading strong,
+.setting-row strong {
+  font-size: 16px;
+  color: #f0d094;
+  font-weight: 400;
+}
+.audio-heading > span {
+  font-size: 14px;
+  color: #f2cf84;
+}
+.audio-channel {
+  padding-bottom: 16px;
+}
+.audio-channel small {
+  margin-top: 10px;
+}
+.difficulty-select {
+  font-size: 16px;
+  color: #e4d7b9;
+}
+.difficulty-select select {
+  font-size: 14px;
+  border: 8px solid transparent;
+  border-image: var(--rune-button) 140 160 fill / 8px stretch;
+  background: #181611;
+  color: #f0d094;
+  padding: 8px;
+  border-radius: 0;
+}
+:is(
+  .objective,
+  .unit-panel,
+  .construction-command,
+  .queued-orders,
+  .toast,
+  .carry-banner,
+  .possession-banner,
+  .pause-banner
+) {
+  border: 16px solid transparent;
+  border-image: var(--rune-panel) 160 fill / 16px stretch;
+  border-radius: 0;
+  background: #14120e;
+  box-shadow: 0 6px 22px #0008;
+  color: #e4d7b9;
+  clip-path: none;
+}
+.objective,
+.game-shell.is-playing .objective {
+  right: 18px;
+  top: 74px;
+  width: 264px;
+  padding: 9px;
+}
+.objective h2 {
+  font-size: 20px;
+  line-height: 1.2;
+  color: #f0d294;
+}
+.objective p {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #d0c4a9;
+}
+.objective-number {
+  font-size: 14px;
+  width: 25px;
+  min-width: 25px;
+  height: 25px;
+}
+.game-shell.is-playing .objective {
+  padding: 5px;
+}
+.unit-panel {
+  width: 316px;
+  padding: 12px;
+}
+.unit-panel-heading h3 {
+  font-size: 28px;
+  line-height: 1.2;
+}
+.unit-state {
+  font-size: 14px;
+  margin: 12px 0;
+  color: #c7b68b;
+}
+.unit-panel .need {
+  grid-template-columns: 105px minmax(30px, 1fr) 35px;
+  gap: 7px;
+  font-size: 14px;
+}
+.unit-panel .need b {
+  font-size: 14px;
+  font-weight: 400;
+}
+.unit-buttons {
+  gap: 4px;
+}
+.construction-command {
+  width: min(460px, calc(100vw - var(--command-width) - 28px));
+  padding: 12px;
+}
+.construction-heading strong {
+  font-size: 28px;
+  line-height: 1.1;
+}
+.construction-heading small,
+.queued-orders > h3 {
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.construction-size {
+  font-size: 14px;
+  padding: 4px 6px;
+}
+:is(
+  .construction-counts,
+  .construction-warning,
+  .construction-instruction,
+  .designation-stages,
+  .queued-order strong,
+  .queued-order small
+) {
+  font-size: 14px;
+  line-height: 1.4;
+}
+.designation-choice {
+  gap: 5px;
+}
+.designation-choice > small {
+  letter-spacing: 0;
+}
+.designation-choice > small {
+  font-size: 12px;
+}
+.queued-orders {
+  width: 240px;
+  padding: 9px;
+  right: 18px;
+  top: 164px;
+  max-height: 230px;
+}
+.game-shell:not(.is-playing) .queued-orders {
+  top: 346px;
+}
+.queued-order {
+  padding-block: 6px;
+}
+.queued-order-focus {
+  min-width: 0;
+}
+.toast,
+.carry-banner,
+.pause-banner,
+.possession-banner {
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 7px 12px;
+}
+.carry-banner {
+  top: 126px;
+  max-width: calc(100vw - var(--command-width) - 28px);
+}
+.possession-banner small {
+  font-size: 12px;
+}
+.tile-tooltip {
+  font-size: 14px;
+  padding: 8px 10px;
+  color: #dec9a4;
+}
+
+/* Button art supplies the bevels; labels remain real, translated text. */
+.game-shell
+  :is(
+    .primary-button,
+    .secondary-button,
+    .tool-shortcuts button,
+    .unit-buttons button,
+    .construction-actions button,
+    .text-button,
+    .minimap-title
+  ),
+.game-dialog button:not([data-slot='switch']) {
+  border: 8px solid transparent;
+  border-image: var(--rune-button) 140 160 fill / 8px stretch;
+  border-radius: 0;
+  background: #15130f;
+  color: #f0d3a0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: 0;
+  min-height: 36px;
+  padding: 3px 6px;
+  clip-path: none;
+  text-shadow: 1px 1px #000;
+  box-shadow: 0 3px 5px #0008;
+  transition:
+    filter 100ms,
+    color 100ms,
+    transform 70ms;
+}
+.game-shell .primary-button,
+.game-dialog .primary-button {
+  min-height: 46px;
+  color: #ffe1a3;
+}
+.game-dialog .secondary-button {
+  min-height: 42px;
+}
+.game-dialog .danger-text {
+  color: #e6ac85;
+}
+.game-shell button:hover:not(:disabled):not([aria-disabled='true']),
+.game-dialog button:hover:not(:disabled) {
+  filter: brightness(1.22);
+  color: #fff0c6;
+}
+.game-shell button:active:not(:disabled):not([aria-disabled='true']),
+.game-dialog button:active:not(:disabled) {
+  filter: brightness(0.88);
+  transform: translateY(2px);
+}
+.game-shell button:focus-visible,
+.game-dialog :is(button, select, [role='slider']):focus-visible {
+  outline: 2px solid #ffd17d;
+  outline-offset: 2px;
+}
+.game-shell button:disabled,
+.game-dialog button:disabled,
+.game-shell .build-card.locked {
+  opacity: 0.65;
+  filter: grayscale(0.75);
+}
+.game-shell
+  :is(
+    .icon-button,
+    .header-actions button,
+    .view-controls button,
+    .playback button,
+    .footer-actions button,
+    .designation-choice button,
+    .construction-cancel,
+    .queued-order-cancel
+  ),
+.game-dialog [data-slot='dialog-close'] {
+  border: 5px solid transparent;
+  border-image: var(--rune-slot) 144 fill / 5px stretch;
+  border-radius: 0;
+  background: #12120e;
+  color: #dbbd80;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 2px;
+  line-height: 1;
+  box-shadow: 0 2px 3px #0008;
+}
+.game-dialog [data-slot='dialog-close'] {
+  top: 6px;
+  right: 6px;
+}
+.game-shell
+  :is(
+    .tool-shortcuts button.active,
+    .playback button.active,
+    .designation-choice button[aria-pressed='true']
+  ) {
+  color: #ffe3a7;
+  outline: 1px solid #d4a455;
+  outline-offset: -3px;
+  box-shadow:
+    inset 0 0 12px #b5722633,
+    0 0 7px #c08e3738;
+}
+.game-shell kbd,
+.game-dialog kbd {
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 2px 4px;
+  border-radius: 0;
+  color: #d4bd91;
+  background: #17140d;
+}
+.header-actions {
+  gap: 4px;
+  padding: 5px;
+  border: 0;
+  background: #100e0bbb;
+}
+.header-actions .language-toggle {
+  min-width: 60px;
+  font-size: 12px;
+  gap: 4px;
+}
+.view-controls {
+  gap: 3px;
+  padding: 5px;
+  border: 0;
+  background: #100e0bdd;
+}
+.view-controls button {
+  width: 30px;
+  height: 30px;
+}
+.bottom-bar {
+  height: 38px;
+  padding: 0 14px;
+  border-top: 1px solid #79603b;
+}
+.playback {
+  left: 14px;
+  bottom: 4px;
+  gap: 3px;
+}
+.playback button {
+  min-width: 27px;
+  width: 27px;
+  height: 28px;
+  min-height: 28px !important;
+  font-size: 14px;
+}
+.footer-actions {
+  gap: 3px;
+}
+.footer-actions button {
+  min-width: 27px;
+  width: 27px;
+  min-height: 28px !important;
+}
+
+/* A compact command column gives each pixel label enough space. */
+.minimap-panel,
+.minimap-panel.collapsed {
+  left: calc((var(--command-width) - 184px) / 2);
+  top: var(--hud-map-top);
+  width: 184px;
+  height: var(--hud-map-size);
+  padding: 0 0 12px;
+  border: 12px solid transparent;
+  border-image: var(--rune-panel) 160 / 12px stretch;
+  border-radius: 0;
+  background: #0c1011;
+  overflow: visible;
+  box-shadow: 0 4px 15px #000a;
+}
+.minimap-panel canvas {
+  width: 160px;
+  height: calc(var(--hud-map-size) - 36px);
+  border-radius: 0;
+  opacity: 1;
+  image-rendering: pixelated;
+}
+.game-shell .minimap-title {
+  width: 132px;
+  left: 14px;
+  bottom: -12px;
+  font-size: 12px;
+  line-height: 1;
+  min-height: 25px;
+  height: 25px;
+  padding: 0;
+  border-width: 6px;
+  border-image-width: 6px;
+}
+.minimap-panel.collapsed {
+  height: 30px;
+}
+.minimap-panel.collapsed .minimap-title {
+  width: 100%;
+  inset: 0;
+}
+.resources {
+  top: var(--hud-resources-top);
+  left: 16px;
+  width: calc(var(--command-width) - 32px);
+  height: 76px;
+  gap: 0;
+}
+.resource.gold {
+  height: 38px;
+}
+.resource.gold strong {
+  font-size: 28px;
+  line-height: 1;
+}
+.resource {
+  padding: 0 6px;
+  gap: 6px;
+}
+.resource strong {
+  font-size: 14px;
+  line-height: 1.25;
+}
+.resource small {
+  font-size: 12px;
+  color: #c7b68d;
+  line-height: 1;
+}
+.resource i {
+  font-size: 12px;
+}
+.game-shell .sidebar :is(.core-status, .residents, .research) {
+  padding: 0;
+  margin: 0;
+}
+.core-status {
+  top: var(--hud-core-top);
+  left: 18px;
+  width: calc(var(--command-width) - 36px);
+}
+.core-status .section-label,
+.research .section-label {
+  font-size: 12px;
+  letter-spacing: 0;
+  margin-bottom: 5px;
+}
+.core-progress {
+  height: 6px;
+}
+.build-dock {
+  top: var(--hud-dock-top);
+  left: 14px;
+  width: calc(var(--command-width) - 28px);
+}
+.dock-top {
+  gap: 5px;
+  min-height: 62px;
+}
+.build-tabs {
+  width: 100%;
+  height: 28px !important;
+  padding: 0 !important;
+  border: 0;
+  background: none !important;
+}
+.game-shell .build-tabs [data-slot='tabs-trigger'] {
+  height: 28px !important;
+  min-height: 28px;
+  font-size: 14px !important;
+  line-height: 1;
+  gap: 3px !important;
+  padding: 1px 4px !important;
+  border: 5px solid transparent !important;
+  border-image: var(--rune-button) 140 160 fill / 5px stretch !important;
+  background: #17140f;
+  color: #c4b291;
+  border-radius: 0;
+}
+.game-shell .build-tabs [data-slot='tabs-trigger'][data-active] {
+  color: #ffe0a2;
+  filter: brightness(1.22);
+}
+.build-tabs [data-slot='tabs-trigger']::after {
+  display: none;
+}
+.build-tabs svg {
+  display: none;
+}
+.game-shell .tool-shortcuts button {
+  height: 30px;
+  min-height: 30px;
+  border-width: 5px;
+  border-image-width: 5px;
+  padding: 1px;
+  font-size: 14px;
+  gap: 3px;
+}
+.tool-shortcuts button svg {
+  display: none;
+}
+.build-cards {
+  gap: 6px;
+  padding: 6px 0;
+}
+.game-shell .build-card,
+.game-shell .build-card.selected {
+  height: 94px;
+  padding: 0 1px 2px;
+  border: 6px solid transparent;
+  border-image: var(--rune-slot) 144 fill / 6px stretch;
+  border-radius: 0;
+  background: #15130e;
+  color: #e9d2a4;
+  box-shadow: 0 3px 7px #0009;
+}
+.game-shell .build-card.selected {
+  outline: 2px solid #d7ad5d;
+  outline-offset: -2px;
+  box-shadow: 0 0 9px #d5964255;
+}
+.game-shell .build-card strong {
+  letter-spacing: 0;
+  font-size: 14px;
+  line-height: 16px;
+  font-weight: 400;
+  white-space: normal;
+}
+.card-visual {
+  height: 48px;
+  margin: 0;
+  flex-shrink: 0;
+}
+.card-price {
+  font-size: 12px;
+  line-height: 14px;
+  color: #d8c293;
+}
+.card-price svg {
+  width: 10px;
+  height: 10px;
+}
+.defence-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.residents {
+  top: var(--hud-residents-top);
+  left: 20px;
+  width: calc(var(--command-width) - 40px);
+}
+.resident-row {
+  width: 44px;
+}
+.resident-icon {
+  width: 44px;
+  height: 44px;
+  border: 5px solid transparent;
+  border-image: var(--rune-slot) 144 / 5px stretch;
+  border-radius: 0;
+}
+.resident-row b {
+  font-size: 14px;
+  font-weight: 400;
+  padding: 2px 3px;
+}
+.research {
+  top: auto;
+  bottom: 45px;
+  left: 18px;
+  width: calc(var(--command-width) - 36px);
+}
+.research-progress {
+  height: 4px;
+}
+.dock-description {
+  font-size: 14px;
+  line-height: 1.4;
+  bottom: 10px;
+}
+.dock-description > div > span,
+.dock-description strong {
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 400;
+}
+.wave-pill {
+  border-radius: 0;
+  clip-path: none;
+  border: 7px solid transparent;
+  border-image: var(--rune-button) 140 160 fill / 7px stretch;
+  padding: 3px 5px;
+  font-size: 14px;
+}
+.wave-pill b {
+  font-size: 14px;
+}
+.welcome-hint {
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+/* Audio controls are bronze sliders and square stone toggles. */
+.game-dialog [data-slot='slider-track'] {
+  height: 8px;
+  border: 1px solid #735d38;
+  border-radius: 0;
+  background: #080806;
+  box-shadow: inset 0 2px 3px #000;
+}
+.game-dialog [data-slot='slider-range'] {
+  background: repeating-linear-gradient(
+    90deg,
+    #bb8e46 0 6px,
+    #e1b96c 6px 7px,
+    #513b20 7px 8px
+  );
+}
+.game-dialog [data-slot='slider-thumb'] {
+  width: 18px;
+  height: 24px;
+  border: 4px solid transparent;
+  border-image: var(--rune-slot) 144 fill / 4px stretch;
+  border-radius: 0;
+  background: #9d7139;
+  box-shadow: 0 2px 5px #000;
+}
+.game-dialog [data-slot='switch'] {
+  width: 44px;
+  height: 24px;
+  border: 3px solid #6c5635;
+  border-radius: 0;
+  background: #0c0c09;
+  padding: 0;
+}
+.game-dialog [data-slot='switch'][data-checked] {
+  background: #8e6a2d;
+  border-color: #bd9556;
+}
+.game-dialog [data-slot='switch-thumb'] {
+  translate: none;
+  width: 18px;
+  height: 18px;
+  border: 3px solid transparent;
+  border-image: var(--rune-slot) 144 fill / 3px stretch;
+  border-radius: 0;
+  background: #ceb578;
+}
+.game-dialog [data-slot='switch'][data-checked] [data-slot='switch-thumb'] {
+  transform: translateX(20px);
+}
+.game-dialog [data-slot='switch'][data-unchecked] [data-slot='switch-thumb'] {
+  transform: translateX(0);
+}
+
+@media (min-height: 820px) and (min-width: 781px) {
+  .game-shell {
+    --hud-map-size: 180px;
+    --hud-resources-top: 248px;
+    --hud-core-top: 334px;
+    --hud-dock-top: 375px;
+    --hud-residents-top: 650px;
+  }
+}
+@media (max-height: 720px) and (min-width: 781px) {
+  .research {
+    display: none;
+  }
+  .residents {
+    display: block !important;
+  }
+}
+@media (max-height: 660px) and (min-width: 781px) {
+  .game-shell {
+    --hud-map-top: 47px;
+    --hud-map-size: 132px;
+    --hud-resources-top: 188px;
+    --hud-core-top: 265px;
+    --hud-dock-top: 298px;
+    --hud-residents-top: 566px;
+  }
+  .brand {
+    top: 10px;
+  }
+  .residents {
+    display: none !important;
+  }
+  .game-shell .build-card,
+  .game-shell .build-card.selected {
+    height: 88px;
+  }
+  .card-visual {
+    height: 42px;
+  }
+}
+@media (max-width: 780px) {
+  .game-shell {
+    --command-width: 232px;
+    --hud-map-size: 128px;
+    --hud-map-top: 45px;
+    --hud-resources-top: 184px;
+    --hud-core-top: 265px;
+    --hud-dock-top: 300px;
+  }
+  .brand {
+    font-size: 28px;
+    left: 15px;
+    gap: 0;
+  }
+  .brand-mark {
+    display: none;
+  }
+  .minimap-panel,
+  .minimap-panel.collapsed {
+    width: 154px;
+    left: calc((var(--command-width) - 154px) / 2);
+  }
+  .minimap-panel canvas {
+    width: 130px;
+  }
+  .game-shell .minimap-title {
+    width: 120px;
+    left: 5px;
+  }
+  .resources {
+    left: 10px;
+    width: calc(var(--command-width) - 20px);
+  }
+  .resource svg {
+    width: 14px;
+  }
+  .resource small {
+    font-size: 12px;
+  }
+  .build-dock {
+    left: 10px;
+    width: calc(var(--command-width) - 20px);
+  }
+  .build-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .game-shell .build-card,
+  .game-shell .build-card.selected {
+    height: 88px;
+  }
+  .card-visual {
+    height: 42px;
+  }
+  .tool-shortcuts button svg {
+    display: block;
+    width: 14px;
+    height: 14px;
+  }
+  .game-shell .tool-shortcuts button {
+    font-size: 0;
+  }
+  .objective,
+  .game-shell.is-playing .objective {
+    width: 210px;
+    border-width: 12px;
+    border-image-width: 12px;
+  }
+  .objective h2 {
+    font-size: 14px;
+  }
+  .objective p {
+    font-size: 14px;
+  }
+  .game-shell .objective .primary-button {
+    font-size: 14px;
+  }
+  .residents,
+  .research {
+    display: none !important;
+  }
+  .header-actions {
+    padding: 3px;
+    gap: 2px;
+  }
+  .game-shell .header-actions button {
+    min-width: 27px;
+  }
+  .game-shell .header-actions .language-toggle {
+    min-width: 52px;
+  }
+  .unit-panel {
+    width: min(316px, calc(100vw - 24px));
+    right: 12px;
+  }
+  .construction-command {
+    width: min(460px, calc(100vw - 24px));
+    left: 50%;
+    bottom: 62px;
+  }
+  .queued-orders {
+    width: 190px;
+    border-width: 10px;
+    border-image-width: 10px;
+  }
+  .designation-choice {
+    flex-wrap: wrap;
+  }
+  .game-shell .build-tabs [data-slot='tabs-trigger'] {
+    font-size: 12px !important;
+    padding: 0 3px !important;
+  }
+  .game-dialog {
+    padding: 12px !important;
+    border-width: 18px !important;
+    border-image-width: 18px !important;
+  }
+}
+@media (max-width: 560px) {
+  .game-shell {
+    --command-width: 184px;
+  }
+  .brand {
+    font-size: 28px;
+    left: 14px;
+  }
+  .game-shell .build-tabs [data-slot='tabs-trigger'] {
+    font-size: 12px !important;
+    border-width: 3px !important;
+    border-image-width: 3px !important;
+    padding: 0 1px !important;
+  }
+  .game-shell .build-card strong {
+    font-size: 12px;
+  }
+  .resource strong {
+    font-size: 14px;
+  }
+  .resource i {
+    display: none;
+  }
+  .resource svg {
+    display: none;
+  }
+  .core-status .section-label {
+    font-size: 12px;
+  }
+  .objective,
+  .game-shell.is-playing .objective {
+    width: 170px;
+    right: 8px;
+    padding: 3px;
+  }
+  .objective-number {
+    display: none;
+  }
+  .header-actions {
+    right: 8px;
+  }
+  .playback {
+    left: 8px;
+  }
+  .footer-actions {
+    gap: 1px;
+  }
+  .game-shell .footer-actions button {
+    min-width: 22px;
+    width: 22px;
+  }
+  .playback button:nth-last-of-type(1) {
+    display: none;
+  }
+  .manual-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-shell button,
+  .game-dialog button {
+    transition: none;
+  }
+}
+
+.resource strong,
+.wave-pill b,
+.card-price,
+.construction-size,
+.need b {
+  font-variant-numeric: tabular-nums;
+}

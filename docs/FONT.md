@@ -1,5 +1,8 @@
 # Kluftkrone Inscribed
 
+The active game font is now [Kluftkrone Runenpixel](RUNENPIXEL.md), newly drawn
+from a pixel grid. This document records the earlier original display face.
+
 An original display typeface created for Kluftkrone on 9 September 2026.
 
 The alphabet was designed specifically for this project in `scripts/build_kluftkrone.py`.
