@@ -82,6 +82,9 @@ import {
   creatures,
   capacity,
   dropUnit,
+  grabUnit,
+  cancelGrab,
+  slapUnit,
   serialize,
   deserialize,
   SAVE_KEY,
@@ -91,6 +94,7 @@ import {
   type Room,
 } from './game';
 import { mountScene, type SceneControls } from './scene';
+import { freshMapSeed } from './seeds';
 import {
   isRoomTool,
   quoteDesignation,
@@ -139,7 +143,7 @@ const toolMeta: Record<
   inspect: {
     name: 'Auswählen',
     description:
-      'Bewohner und Räume ansehen. Einen Bewohner wählen, dann mit „Umsetzen“ auf eigenem Boden absetzen.',
+      'Bewohner direkt greifen: anklicken oder ziehen und auf freiem Boden loslassen. Rechtsklick schlägt. Details über die Bewohnerporträts öffnen.',
     icon: MousePointer2,
     cost: '',
     key: '1',
@@ -281,6 +285,7 @@ function Minimap({
       }
     }
     for (const u of state.units) {
+      if (u.id === state.heldUnitId) continue;
       c.fillStyle = UNIT_COLORS[u.kind];
       c.beginPath();
       c.arc(u.x * cell + 3, u.z * cell + 3, 2, 0, Math.PI * 2);
@@ -346,8 +351,7 @@ export default function App() {
   );
   const [hovered, setHovered] = useState<number | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
-  const [carrying, setCarrying] = useState<number | null>(null);
-  const carryRef = useRef<number | null>(null);
+  const carrying = snapshot.heldUnitId;
   const [possessed, setPossessed] = useState<number | null>(null);
   const possessedRef = useRef<number | null>(null);
   const [help, setHelp] = useState(false);
@@ -369,6 +373,7 @@ export default function App() {
   const soundRef = useRef<DungeonAudio | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioSettingsRef = useRef(audioSettings);
+  const playedEffectsRef = useRef(new WeakSet<object>());
   const refresh = useCallback(() => setSnapshot({ ...stateRef.current }), []);
   const notify = useCallback((message: string) => {
     setToast(message);
@@ -407,6 +412,54 @@ export default function App() {
       soundRef.current = null;
     };
   }, []);
+  const releaseGrab = useCallback(() => {
+    cancelGrab(stateRef.current);
+    sceneRef.current?.cancelDrag();
+    refresh();
+  }, [refresh]);
+  const pickupResident = useCallback(
+    (id: number) => {
+      if (possessedRef.current !== null || !grabUnit(stateRef.current, id))
+        return false;
+      updateConstruction(null);
+      setSelected(null);
+      const unit = stateRef.current.units.find((u) => u.id === id)!;
+      sound('click');
+      soundRef.current?.voice(unit.kind, 'grab');
+      refresh();
+      return true;
+    },
+    [refresh, sound, updateConstruction],
+  );
+  const placeResident = useCallback(
+    (i: number) => {
+      const s = stateRef.current;
+      const id = s.heldUnitId;
+      if (id === null) return;
+      const unit = s.units.find((u) => u.id === id);
+      if (dropUnit(s, id, i)) {
+        notify('Bewohner abgesetzt.');
+        soundRef.current?.voice(unit?.kind ?? 'worker', 'drop');
+      } else
+        notify(
+          'Wähle erkundeten, begehbaren Boden. Die Kreatur bleibt in deiner Hand.',
+        );
+      refresh();
+    },
+    [refresh, notify],
+  );
+  const slapResident = useCallback(
+    (id: number) => {
+      if (!slapUnit(stateRef.current, id)) return;
+      const unit = stateRef.current.units.find((u) => u.id === id)!;
+      sound('hit', unit.x);
+      soundRef.current?.voice(unit.kind, 'hurt');
+      const effect = stateRef.current.effects.at(-1);
+      if (effect) playedEffectsRef.current.add(effect);
+      refresh();
+    },
+    [refresh, sound],
+  );
   const changeTool = useCallback(
     (next: Tool) => {
       const previousPlan = constructionRef.current;
@@ -419,8 +472,8 @@ export default function App() {
       setTool(next);
       if (isDesignationTool(next)) setSelected(null);
       toolRef.current = next;
-      setCarrying(null);
-      carryRef.current = null;
+      cancelGrab(stateRef.current);
+      refresh();
       sound();
       if (next === 'worker') {
         const result = applyTool(stateRef.current, next, 13 + 14 * SIZE);
@@ -487,22 +540,6 @@ export default function App() {
         canControl: () =>
           !pauseRef.current && stateRef.current.status === 'playing',
         onSelect: (i, unitId) => {
-          if (carryRef.current !== null) {
-            if (dropUnit(stateRef.current, carryRef.current, i)) {
-              const dropped = stateRef.current.units.find(
-                (u) => u.id === carryRef.current,
-              );
-              setCarrying(null);
-              carryRef.current = null;
-              notify('Bewohner abgesetzt.');
-              soundRef.current?.voice(dropped?.kind ?? 'worker', 'drop');
-            } else
-              notify(
-                'Bewohner können nur auf eigenem, freiem Boden abgesetzt werden.',
-              );
-            refresh();
-            return;
-          }
           if (toolRef.current === 'inspect') {
             setSelected(unitId);
             if (unitId === null) {
@@ -519,6 +556,10 @@ export default function App() {
             }
           } else applySelection([i]);
         },
+        onSlap: slapResident,
+        onGrab: pickupResident,
+        onDrop: placeResident,
+        onCancelGrab: releaseGrab,
         onArea: applySelection,
         onHover: setHovered,
         onPossession: (id) => {
@@ -538,7 +579,16 @@ export default function App() {
       sceneRef.current = null;
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
-  }, [notify, refresh, applySelection, updateConstruction]);
+  }, [
+    notify,
+    refresh,
+    applySelection,
+    updateConstruction,
+    pickupResident,
+    placeResident,
+    releaseGrab,
+    slapResident,
+  ]);
   useEffect(() => {
     pauseRef.current = !started || paused || help || settings || newGameDialog;
     speedRef.current = speed;
@@ -573,8 +623,8 @@ export default function App() {
       setPaused(false);
       setSettings(false);
       setSelected(null);
-      setCarrying(null);
-      carryRef.current = null;
+      cancelGrab(stateRef.current);
+      refresh();
       sceneRef.current?.possess(null);
       sceneRef.current?.center();
       setDifficulty(loaded.difficulty);
@@ -589,7 +639,7 @@ export default function App() {
       uiElapsed = 0,
       saveElapsed = 0,
       lastWave = 0;
-    const previousEffects = new WeakSet<object>();
+    const previousEffects = playedEffectsRef.current;
     const timer = setInterval(() => {
       const now = performance.now(),
         elapsed = Math.min((now - previous) / 1000, 0.2);
@@ -616,7 +666,9 @@ export default function App() {
           soundRef.current?.cue(effect.type, effect.x);
           if (effect.type === 'hit') {
             const victim = stateRef.current.units.find(
-              (u) => Math.hypot(u.x - effect.x, u.z - effect.z) < 0.7,
+              (u) =>
+                u.id !== stateRef.current.heldUnitId &&
+                Math.hypot(u.x - effect.x, u.z - effect.z) < 0.7,
             );
             if (victim) soundRef.current?.voice(victim.kind, 'hurt');
           }
@@ -644,6 +696,11 @@ export default function App() {
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
       )
         return;
+      if (stateRef.current.heldUnitId !== null && e.key === 'Escape') {
+        e.preventDefault();
+        releaseGrab();
+        return;
+      }
       if (constructionRef.current && e.key === 'Escape') {
         e.preventDefault();
         updateConstruction(null);
@@ -703,6 +760,7 @@ export default function App() {
     saveGame,
     buildConstruction,
     updateConstruction,
+    releaseGrab,
   ]);
   useEffect(
     () =>
@@ -736,15 +794,14 @@ export default function App() {
   );
   const startNew = () => {
     stateRef.current = createGame(
-      Math.floor(Math.random() * 1000000),
+      freshMapSeed(stateRef.current.seed),
       difficulty,
     );
     setStarted(true);
     setPaused(false);
     setSpeed(1);
     setSelected(null);
-    setCarrying(null);
-    carryRef.current = null;
+
     sceneRef.current?.possess(null);
     setNewGameDialog(false);
     setSettings(false);
@@ -1418,14 +1475,9 @@ export default function App() {
           )}
           {carrying !== null && (
             <div className="carry-banner">
-              <Hand size={18} /> Wähle eigenen Boden zum Absetzen.{' '}
-              <button
-                onClick={() => {
-                  setCarrying(null);
-                  carryRef.current = null;
-                }}
-                aria-label="Umsetzen abbrechen"
-              >
+              <Hand size={18} /> Ziehen und loslassen oder Boden anklicken. ESC:
+              zurück.{' '}
+              <button onClick={releaseGrab} aria-label="Umsetzen abbrechen">
                 <X size={16} />
               </button>
             </div>
@@ -1466,34 +1518,12 @@ export default function App() {
                   <button
                     onClick={() => {
                       changeTool('inspect');
-                      setCarrying(selectedUnit.id);
-                      carryRef.current = selectedUnit.id;
-                      soundRef.current?.voice(selectedUnit.kind, 'grab');
+                      pickupResident(selectedUnit.id);
                     }}
                   >
                     <Hand size={15} /> Greifen
                   </button>
-                  <button
-                    onClick={() => {
-                      const target = stateRef.current.units.find(
-                        (u) => u.id === selectedUnit.id,
-                      );
-                      if (target) {
-                        target.hp = Math.max(1, target.hp - 3);
-                        target.mood = Math.max(0, target.mood - 5);
-                        target.energy = Math.min(100, target.energy + 4);
-                        soundRef.current?.voice(target.kind, 'hurt');
-                        soundRef.current?.cue('hit', target.x);
-                        stateRef.current.effects.push({
-                          x: target.x,
-                          z: target.z,
-                          type: 'hit',
-                          life: 0.4,
-                        });
-                        refresh();
-                      }
-                    }}
-                  >
+                  <button onClick={() => slapResident(selectedUnit.id)}>
                     <Hand size={15} /> Schlagen
                   </button>
                   <button
@@ -1825,7 +1855,7 @@ export default function App() {
               {
                 icon: Hand,
                 title: '06 / Eingreifen',
-                text: 'Auswählen (1) zeigt Bedürfnisse. „Umsetzen“ versetzt eigene Bewohner. „Übernehmen“ gibt dir ihre Sicht: WASD bewegt, rechte Maustaste dreht. Mit Escape zurück.',
+                text: 'Bewohner direkt anklicken und danach den Zielboden anklicken – oder mit gedrückter Maustaste ziehen und loslassen. Auch unbeanspruchter Boden ist erlaubt. Escape oder Rechtsklick setzt eine getragene Kreatur zurück. Rechtsklick auf einen freien Bewohner schlägt ihn. Porträts öffnen die Bedürfnisse; „Übernehmen“ wechselt in ihre Sicht.',
               },
             ].map(({ icon: Icon, title, text }) => (
               <article key={title}>
@@ -1959,6 +1989,8 @@ export default function App() {
             <RotateCcw size={15} /> Neue Expedition beginnen
           </button>
           <p className="credits">
+            <span>Karten-Seed</span>: <code>{s.seed}</code>
+            <br />
             KLUFTKRONE · Version 1.0
             <br />
             Eigenständiges Spiel mit eigenen Welten, Figuren und Spielwerten.

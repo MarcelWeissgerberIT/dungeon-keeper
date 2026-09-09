@@ -11,9 +11,10 @@ Kindle the ember, designate earth and gold, and let your delvers excavate and cl
 - Six room types, limited gold storage and real hauling.
 - Delvers, Ash Wardens, Rune Weavers and Basalt Colossi with autonomous needs, work, combat and experience.
 - Healing, lightning, rally orders, three-charge snares and protective gates.
-- Creature pickup, slapping, direct possession and individual creature vocalizations.
+- Direct creature drag-and-drop, slapping, possession and individual creature vocalizations.
 - Original evolving ambient score and spatial effects with **independent music and effects volume/mute controls**.
 - OpenArt terrain, illustrated furnishings and powers, a carved command HUD and original display font. Five original articulated 3D creature models have animated limbs, faces, armour and equipment.
+- A fresh random map seed on every page load and new expedition; loading a save retains its world. The seed is shown in Settings.
 - Local autosave every 30 seconds, manual save/load, pause and 1×/2×/3× speed.
 - A German/English language switch. Desktop keyboard/mouse recommended; compact touch HUD supported.
 
@@ -47,3 +48,9 @@ Use **Excavate** or a room tool and drag a rectangle across known earth, gold or
 Orders remain visible in the dungeon, minimap and order list. Delvers automatically excavate reachable tiles, claim exposed ground, then walk to and construct planned room tiles. Planning is free; each completed room tile charges its normal price. If gold runs out, excavation can continue and construction waits. An inaccessible area stays marked until a passage is opened. Orders are included in saved games; older saves remain compatible.
 
 **Escape** discards only the unconfirmed draft. The order list lets you focus/edit an existing plan or remove its remaining orders. **Remove orders** on a selected area, or Sell on a designated tile, removes unfinished work without selling completed rooms or charging gold. Changing a future room replaces its unpaid order. Direct WebMCP construction remains a separate immediate-build operation on claimed ground, with an atomic total-price check.
+
+### Moving creatures
+
+With Inspect, Excavate or a room tool, click a visible resident to lift it, then click explored open ground to drop it. Alternatively, drag the resident and release over the destination. Green marks a valid landing tile; red means blocked ground. Unclaimed and disconnected open ground are allowed. Invalid or off-canvas drops keep the resident in hand. **Escape**, right-click, changing tools or cancelling returns it to its pickup position. **Right-click a resident on the ground to slap it**, with recoil and a creature voice. It loses a little health and happiness and gains a small energy boost. Dragging the right button rotates the camera without slapping. Creature portraits still open needs, slapping and possession.
+
+A held creature leaves the world simulation: no walking, work or combat, and no minimap dot at its old location. It remains part of your population and payroll. Saving while holding it records it safely at its pickup location. Existing saves remain compatible.

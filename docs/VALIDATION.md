@@ -2,7 +2,7 @@
 
 Validated on 2026-09-09 using Node.js 24.
 
-- 34 automated tests pass: room costs and rejected actions, reachable gold excavation/hauling/claiming, inaccessible mining, worker independence from rally orders, save/load at fractional positions, feeding and rest, traps during combat, combat needs and leveling, walls blocking ranged damage, recruitment/research/payroll, malformed saves, terminal outcomes, and full expeditions on relaxed/normal/hard using regular player commands.
+- 41 automated tests pass: room costs and rejected actions, reachable gold excavation/hauling/claiming, inaccessible mining, worker independence from rally orders, save/load at fractional positions, feeding and rest, traps during combat, combat needs and leveling, walls blocking ranged damage, recruitment/research/payroll, malformed saves, terminal outcomes, and full expeditions on relaxed/normal/hard using regular player commands.
 - All three complete expeditions include a midgame save/load and end with victory using normal resources and powers.
 - Independent music/effects gain and mute settings are verified with a Web Audio test double. Audio requires a user interaction, as enforced by browsers. Synthetic creature voices and music are original; perceived sound quality has not been measured by an automated listening test.
 - Room, creature, room-description and dynamic-event translations are tested, including callback/key/accessibility preservation in the translated React tree and a regression test for unkeyed static siblings during English rendering.
@@ -24,3 +24,10 @@ Validated on 2026-09-09 using Node.js 24.
 ## Practical boundaries
 
 One replayable expedition, not a remake of another game's campaign. Resource layouts vary by seed while the starting dungeon stays learnable. Desktop mouse/keyboard is the primary input; narrow displays use a compact command column; secondary passive indicators are reduced on short windows. No multiplayer, cloud saves or imported third-party game assets. Persistent data stays in the local browser; blocked browser storage leaves the live session playable but prevents saves. The build is static and requires no server secrets.
+
+## Direct creature handling and fresh map seeds
+
+- Seven handling tests cover inactive held workers/scholars/fighters, enemy target exclusion, population/payroll, unclaimed disconnected landing tiles, invalid drops, repeated pickup while paused, cancel without loss/penalty, save compatibility, fresh/reproducible seeds, and capped slap damage/mood/energy/effects. Existing deterministic campaign fixtures now pass explicit seeds.
+- Browser checks exercised direct click pickup/click drop, drag-and-drop with the default excavation tool, blocked earth keeping the creature in hand, Escape cancellation, and right-click slap with visible health-bar feedback. English pickup/error messages and German HUD were checked.
+- Three browser-created worlds showed seeds 585385197, 2683902329 (page reload) and 3818949338 (New expedition). Loading retains the saved seed; fresh seed generation tolerates disabled storage and prevents immediate repetition even when an entropy source repeats.
+- Held rigs follow the pointer and dangle; valid/invalid landing tiles use green/red highlights. Landing animation follows accelerated simulation timing while remaining animated when paused. Direct slap audio is emitted once per action through the independently controlled effects channel.

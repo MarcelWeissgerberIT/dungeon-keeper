@@ -8,7 +8,7 @@ import {
 } from '../app/construction';
 
 const emptyArea = () => {
-  const s = createGame();
+  const s = createGame(92841);
   const tiles = rectangleIndices(idx(10, 10), idx(12, 12));
   for (const i of tiles)
     Object.assign(s.tiles[i], {

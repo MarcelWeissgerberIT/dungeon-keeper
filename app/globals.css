@@ -4871,3 +4871,16 @@ small {
     top: 245px;
   }
 }
+
+/* Keep the carrying prompt part of the carved command HUD. */
+.carry-banner {
+  color: #e5d3a8;
+  border: 1px solid #887044;
+  border-radius: 0;
+  background:
+    linear-gradient(110deg, #15130fed, #282115ed),
+    url('/art/openart/hud-stone.webp') center / cover;
+  box-shadow:
+    inset 0 0 0 2px #16130e,
+    0 5px 20px #0008;
+}

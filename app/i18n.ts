@@ -139,8 +139,12 @@ const messages: Record<string, string> = {
   'WASD bewegen · Rechte Maustaste ziehen: umsehen':
     'WASD to move · Drag right mouse button to look',
   Verlassen: 'Leave',
-  'Wähle eigenen Boden zum Absetzen.':
-    'Choose claimed ground to drop the creature.',
+  'Ziehen und loslassen oder Boden anklicken. ESC: zurück.':
+    'Drag and release or click the ground. ESC: return.',
+  'Wähle erkundeten, begehbaren Boden. Die Kreatur bleibt in deiner Hand.':
+    'Choose explored, walkable ground. The creature stays in your hand.',
+  'In der Hand': 'In your hand',
+  'Karten-Seed': 'Map seed',
   'Umsetzen abbrechen': 'Cancel pickup',
   'Bewohnerdetails schließen': 'Close creature details',
   Lebenskraft: 'Health',
@@ -274,8 +278,8 @@ const messages: Record<string, string> = {
     'Expand your sanctuary, set traps and survive all four invasions.',
   'Der Sonnenmarsch ist gebrochen. Dein Reich hat bestanden.':
     'The Sun March is broken. Your domain has endured.',
-  'Bewohner und Räume ansehen. Einen Bewohner wählen, dann mit „Umsetzen“ auf eigenem Boden absetzen.':
-    'Inspect creatures and rooms. Select a creature, then use Pick up to move it to claimed ground.',
+  'Bewohner direkt greifen: anklicken oder ziehen und auf freiem Boden loslassen. Rechtsklick schlägt. Details über die Bewohnerporträts öffnen.':
+    'Grab creatures directly: click, or drag and release over open ground. Right-click to slap. Open details through creature portraits.',
   'Ziehe ein Raster über Erde oder Gold. Wähle Nur graben oder einen späteren Raum; Enter setzt den Auftrag.':
     'Draw a grid over earth or gold. Choose Excavate only or a future room; Enter places the order.',
   'Räume und Verteidigung verkaufen. Du erhältst die Hälfte der Baukosten zurück.':
@@ -381,8 +385,8 @@ const messages: Record<string, string> = {
     'Training costs gold and strengthens fighters. Four archive tiles attract a rune weaver. Their research unlocks Stormspark, traps, gates and the workshop.',
   'Überstehe vier Angriffswellen und bewahre die Glut. Kämpfer greifen automatisch an. Glutsegen heilt auch die Glut. Das Sammelbanner (4) bündelt Kräfte; danach wieder lösen.':
     'Survive four invasions and protect the ember. Fighters attack automatically. Ember blessing also heals the ember. Rally banner (4) gathers forces; dismiss it afterwards.',
-  'Auswählen (1) zeigt Bedürfnisse. „Umsetzen“ versetzt eigene Bewohner. „Übernehmen“ gibt dir ihre Sicht: WASD bewegt, rechte Maustaste dreht. Mit Escape zurück.':
-    'Select (1) reveals needs. Pick up lets you move your creatures. Possess gives you their view: WASD moves, right mouse drag turns. Escape returns.',
+  'Bewohner direkt anklicken und danach den Zielboden anklicken – oder mit gedrückter Maustaste ziehen und loslassen. Auch unbeanspruchter Boden ist erlaubt. Escape oder Rechtsklick setzt eine getragene Kreatur zurück. Rechtsklick auf einen freien Bewohner schlägt ihn. Porträts öffnen die Bedürfnisse; „Übernehmen“ wechselt in ihre Sicht.':
+    'Click a creature, then click its destination – or drag it with the left mouse button and release. Unclaimed ground is allowed. Escape or right-click returns a held creature. Right-click a resident on the ground to slap it. Portraits show its needs; Possess switches to its view.',
   'Speicherstände bleiben lokal in diesem Browser. Automatische Sicherung alle 30 Sekunden. Desktop und Maus werden empfohlen.':
     'Saves stay in this browser. Automatic saving every 30 seconds. Desktop and mouse recommended.',
   'Das Spiel pausiert, während dieses Fenster geöffnet ist.':

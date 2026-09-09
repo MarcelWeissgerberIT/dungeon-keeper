@@ -16,7 +16,7 @@ const advance = (s: GameState, seconds: number) => {
   for (let n = 0; n < Math.round(seconds * 10); n++) tick(s, 0.1);
 };
 const quiet = () => {
-  const s = createGame();
+  const s = createGame(92841);
   s.nextWave = s.nextArrival = s.nextPayday = 100000;
   return s;
 };

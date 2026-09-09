@@ -14,7 +14,7 @@ test('WebMCP registrations share simulation actions, validate batches and abort 
       },
     },
   });
-  const s = createGame();
+  const s = createGame(92841);
   let paused = false;
   const cleanup = registerGameTools({
     state: () => s,

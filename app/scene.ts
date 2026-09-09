@@ -12,6 +12,7 @@ import {
   idx,
   inBounds,
   walkable,
+  canDropUnit,
   type GameState,
   type Unit,
   type Tool,
@@ -35,6 +36,10 @@ export interface SceneOptions {
   onPreview: (indices: number[] | null) => void;
   canControl: () => boolean;
   onSelect: (i: number, unitId: number | null) => void;
+  onGrab: (id: number) => boolean;
+  onDrop: (i: number) => void;
+  onCancelGrab: () => void;
+  onSlap: (id: number) => void;
   onArea: (indices: number[]) => void;
   onHover: (i: number | null) => void;
   onPossession: (id: number | null) => void;
@@ -827,6 +832,9 @@ export function mountScene(
     lastX = 0,
     lastY = 0,
     dragMoved = false;
+  let handGesture: 'grab' | 'drop' | null = null;
+  let slapCandidate: number | null = null;
+  let rightMoved = false;
   const keys = new Set<string>();
   function resize() {
     const w = host.clientWidth,
@@ -867,19 +875,49 @@ export function mountScene(
       z = Math.round(point.z);
     return inBounds(x, z) ? idx(x, z) : null;
   }
+  const liftPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -3.2);
+  const liftPoint = new THREE.Vector3();
   function area() {
     return rectangleIndices(dragStart, dragEnd);
   }
   function cancelDrag() {
     dragStart = dragEnd = null;
     dragMoved = false;
+    handGesture = null;
+    rightDown = false;
+    rightMoved = false;
+    slapCandidate = null;
+  }
+  function pickUnit() {
+    const candidates: THREE.Object3D[] = [];
+    for (const [id, group] of unitObjects) {
+      if (group.visible && id !== options.state().heldUnitId)
+        candidates.push(group.userData.model);
+    }
+    const hit = raycaster.intersectObjects(candidates, true)[0];
+    const wall = hit ? raycaster.intersectObject(terrain, true)[0] : null;
+    if (!hit || (wall && hit.distance > wall.distance + 0.05)) return null;
+    return (
+      options.state().units.find((u) => u.id === hit.object.userData.unitId) ??
+      null
+    );
   }
   function onDown(e: PointerEvent) {
     renderer.domElement.focus();
     if (e.button === 2 || e.button === 1) {
-      rightDown = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
+      if (options.state().heldUnitId !== null) options.onCancelGrab();
+      else {
+        rightDown = true;
+        renderer.domElement.setPointerCapture(e.pointerId);
+        rightMoved = false;
+        pick(e);
+        slapCandidate =
+          e.button === 2 && possessed === null
+            ? (pickUnit()?.id ?? null)
+            : null;
+        lastX = e.clientX;
+        lastY = e.clientY;
+      }
       e.preventDefault();
       return;
     }
@@ -887,14 +925,25 @@ export function mountScene(
     dragStart = pick(e);
     dragEnd = dragStart;
     dragMoved = false;
-    if (isDesignationTool(options.tool()) && dragStart !== null)
-      options.onPreview(area());
-    renderer.domElement.setPointerCapture(e.pointerId);
     lastX = e.clientX;
     lastY = e.clientY;
+    renderer.domElement.setPointerCapture(e.pointerId);
+    if (options.state().heldUnitId !== null) handGesture = 'drop';
+    else if (
+      possessed === null &&
+      (options.tool() === 'inspect' || isDesignationTool(options.tool()))
+    ) {
+      const unit = pickUnit();
+      if (unit && options.onGrab(unit.id)) handGesture = 'grab';
+    }
+    if (!handGesture && isDesignationTool(options.tool()) && dragStart !== null)
+      options.onPreview(area());
   }
   function onMove(e: PointerEvent) {
     if (rightDown) {
+      if (!rightMoved && Math.hypot(e.clientX - lastX, e.clientY - lastY) <= 5)
+        return;
+      rightMoved = true;
       if (possessed !== null) {
         lookAngle -= (e.clientX - lastX) * 0.009;
         lookPitch = Math.max(
@@ -917,67 +966,53 @@ export function mountScene(
       hovered = p;
       options.onHover(p);
     }
-    if (dragStart !== null) {
+    if (dragStart !== null || handGesture) {
       if (p !== null && dragEnd !== p) {
         dragEnd = p;
-        if (isDesignationTool(options.tool())) options.onPreview(area());
+        if (!handGesture && isDesignationTool(options.tool()))
+          options.onPreview(area());
       }
       dragMoved ||= Math.hypot(e.clientX - lastX, e.clientY - lastY) > 5;
     }
   }
   function onUp(e: PointerEvent) {
     if (e.button !== 0) {
+      if (e.button === 2 && rightDown && !rightMoved && slapCandidate !== null)
+        options.onSlap(slapCandidate);
       rightDown = false;
+      slapCandidate = null;
+      if (renderer.domElement.hasPointerCapture(e.pointerId))
+        renderer.domElement.releasePointerCapture(e.pointerId);
       return;
     }
-    const end = pick(e),
-      tool = options.tool();
-    if (tool === 'inspect' && dragStart !== null && !dragMoved) {
-      const candidates: THREE.Object3D[] = [];
-      for (const group of unitObjects.values()) {
-        if (!group.visible) continue;
-        candidates.push(group.userData.model);
-      }
-      const hit = raycaster.intersectObjects(candidates, true)[0];
-      const wall = hit ? raycaster.intersectObject(terrain, true)[0] : null;
-      if (hit && (!wall || hit.distance < wall.distance + 0.05)) {
-        const unit = options
-          .state()
-          .units.find((u) => u.id === hit.object.userData.unitId);
-        if (unit) {
-          options.onSelect(
-            idx(Math.round(unit.x), Math.round(unit.z)),
-            unit.id,
-          );
-          dragStart = dragEnd = null;
-          return;
-        }
-      }
-    }
-    if (end !== null && dragStart !== null) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    const inside =
+      e.clientX >= rect.left &&
+      e.clientX <= rect.right &&
+      e.clientY >= rect.top &&
+      e.clientY <= rect.bottom &&
+      document.elementFromPoint(e.clientX, e.clientY) === renderer.domElement;
+    const end = inside ? pick(e) : null;
+    const tool = options.tool();
+    if (handGesture) {
+      if ((handGesture === 'drop' || dragMoved) && end !== null)
+        options.onDrop(end);
+      // Outside the viewport or over invalid terrain: keep the resident safely in hand.
+    } else if (end !== null && dragStart !== null) {
       dragEnd = end;
-      if (
-        dragMoved &&
-        tool !== 'inspect' &&
-        tool !== 'heal' &&
-        tool !== 'bolt' &&
-        tool !== 'rally'
-      )
+      if (dragMoved && !['inspect', 'heal', 'bolt', 'rally'].includes(tool))
         options.onArea(area());
       else {
-        const t = options.state().tiles[end];
-        const u = options
-          .state()
-          .units.filter((u) => Math.hypot(u.x - t.x, u.z - t.z) < 0.8)
-          .sort(
-            (a, b) =>
-              Math.hypot(a.x - t.x, a.z - t.z) -
-              Math.hypot(b.x - t.x, b.z - t.z),
-          )[0];
-        options.onSelect(end, u?.id ?? null);
+        const unit = pickUnit();
+        const tile =
+          unit && tool === 'inspect'
+            ? idx(Math.round(unit.x), Math.round(unit.z))
+            : end;
+        options.onSelect(tile, unit?.id ?? null);
       }
     }
-    if (end === null && isDesignationTool(tool)) options.onPreview(null);
+    if (end === null && !handGesture && isDesignationTool(tool))
+      options.onPreview(null);
     cancelDrag();
     if (renderer.domElement.hasPointerCapture(e.pointerId))
       renderer.domElement.releasePointerCapture(e.pointerId);
@@ -1023,6 +1058,7 @@ export function mountScene(
   function blur() {
     keys.clear();
     rightDown = false;
+    if (options.state().heldUnitId !== null) options.onCancelGrab();
     if (dragStart !== null && isDesignationTool(options.tool()))
       options.onPreview(null);
     cancelDrag();
@@ -1144,6 +1180,34 @@ export function mountScene(
       const g = unitObjects.get(u.id) ?? makeUnit(u);
       g.visible = u.id !== possessed;
       const prev = g.userData.previous as THREE.Vector3;
+      if (u.id === s.heldUnitId) {
+        raycaster.setFromCamera(mouse, camera);
+        if (raycaster.ray.intersectPlane(liftPlane, liftPoint)) {
+          g.position.copy(liftPoint);
+          g.position.y -= g.userData.rig.height;
+        }
+        g.userData.wasHeld = true;
+        g.userData.model.rotation.y = angle + Math.PI;
+        g.userData.model.rotation.z = Math.sin(time * 4) * 0.13;
+        g.userData.rig.animate(
+          time + u.id * 0.73,
+          0,
+          'In der Hand',
+          u.hp / u.maxHp,
+        );
+        g.userData.bar.visible = false;
+        // Contact shadows belong on the dungeon floor, never beneath a dangling model.
+        for (const child of g.children)
+          if (child !== g.userData.model) child.visible = false;
+        prev.set(u.x, 0, u.z);
+        continue;
+      }
+      if (g.userData.wasHeld) {
+        g.userData.wasHeld = false;
+        g.userData.throwOrigin = g.position.clone();
+        g.userData.throwStart = time;
+        for (const child of g.children) child.visible = true;
+      }
       const distance = Math.hypot(u.x - prev.x, u.z - prev.z);
       if (distance > 0.002)
         g.userData.direction = Math.atan2(u.x - prev.x, u.z - prev.z);
@@ -1161,10 +1225,28 @@ export function mountScene(
             destination.z - u.z,
           );
       }
-      if (distance > 2) g.position.set(u.x, 0, u.z);
+      const flight = g.userData.throwOrigin
+        ? Math.min(
+            1,
+            Math.max(
+              (time - g.userData.throwStart) / 0.4,
+              1 - u.dropTimer / 0.45,
+            ),
+          )
+        : 1;
+      if (flight < 1) {
+        g.position
+          .copy(g.userData.throwOrigin)
+          .lerp(new THREE.Vector3(u.x, 0, u.z), flight);
+        g.position.y += Math.sin(flight * Math.PI) * 0.8;
+      } else if (distance > 2) g.position.set(u.x, 0, u.z);
       else {
         g.position.x = THREE.MathUtils.damp(g.position.x, u.x, 24, dt);
         g.position.z = THREE.MathUtils.damp(g.position.z, u.z, 24, dt);
+      }
+      if (flight >= 1) {
+        g.position.y = 0;
+        g.userData.throwOrigin = null;
       }
       g.userData.speed = THREE.MathUtils.damp(
         g.userData.speed,
@@ -1200,7 +1282,7 @@ export function mountScene(
     const quote = plan ? quoteDesignation(s, plan.room, plan.indices) : null;
     const preview = new Set(quote?.selected ?? []),
       valid = new Set(quote?.valid ?? []);
-    const planning = isDesignationTool(options.tool());
+    const planning = s.heldUnitId === null && isDesignationTool(options.tool());
     let planCount = 0,
       lineVertex = 0;
     const line = (
@@ -1278,6 +1360,14 @@ export function mountScene(
     if (hovered !== null) {
       const t = s.tiles[hovered];
       hover.position.set(t.x, walkable(t) ? 0.16 : 1.5, t.z);
+      hover.material.color.set(
+        s.heldUnitId === null
+          ? '#f8d386'
+          : canDropUnit(s, hovered)
+            ? '#7debb4'
+            : '#ef6d59',
+      );
+      hover.material.opacity = s.heldUnitId === null ? 0.45 : 0.65;
     }
     rallyMarker.visible = s.rally !== null;
     if (s.rally !== null) {
@@ -1349,6 +1439,11 @@ export function mountScene(
       target.set(x, 0, z);
     },
     possess: (id) => {
+      if (id !== null) {
+        const unit = options.state().units.find((u) => u.id === id);
+        if (!unit || unit.kind === 'invader') return;
+        options.onCancelGrab();
+      }
       possessed = id;
       lookAngle = Math.PI;
       lookPitch = 0;

@@ -1,3 +1,5 @@
+import { freshMapSeed } from './seeds';
+
 export const SIZE = 27;
 export type Room = 'vault' | 'rest' | 'food' | 'training' | 'library' | 'forge';
 export type TileKind =
@@ -55,6 +57,7 @@ export interface Unit {
   path: number[];
   cooldown: number;
   wage: number;
+  dropTimer: number;
 }
 export interface Message {
   id: number;
@@ -74,6 +77,7 @@ export interface GameState {
   difficulty: 'relaxed' | 'normal' | 'hard';
   tiles: Tile[];
   units: Unit[];
+  heldUnitId: number | null;
   gold: number;
   mana: number;
   coreHp: number;
@@ -244,13 +248,14 @@ export function spawn(
     path: [],
     cooldown: 0,
     wage: kind === 'worker' ? 0 : kind === 'brute' ? 65 : 35,
+    dropTimer: 0,
   };
   s.units.push(u);
   s.effects.push({ x, z, type: 'spawn', life: 1 });
   return u;
 }
 export function createGame(
-  seed = 92841,
+  seed = freshMapSeed(),
   difficulty: GameState['difficulty'] = 'normal',
 ): GameState {
   const rng = random(seed);
@@ -260,6 +265,7 @@ export function createGame(
     difficulty,
     tiles: [],
     units: [],
+    heldUnitId: null,
     gold: 2400,
     mana: 100,
     coreHp: 1500,
@@ -463,7 +469,7 @@ export function applyTool(
   if (tool === 'heal') {
     if (s.mana < 30) return { ok: false, message: 'Du benötigst 30 Mana.' };
     const targets = creatures(s).filter(
-      (u) => Math.hypot(u.x - t.x, u.z - t.z) < 3,
+      (u) => u.id !== s.heldUnitId && Math.hypot(u.x - t.x, u.z - t.z) < 3,
     );
     const atCore = Math.hypot(t.x - 13, t.z - 14) < 3;
     if (!targets.length && !atCore)
@@ -566,15 +572,68 @@ export function applyTool(
   }
   return { ok: false };
 }
+export function grabUnit(s: GameState, id: number) {
+  const u = s.units.find((u) => u.id === id);
+  if (
+    s.status !== 'playing' ||
+    s.heldUnitId !== null ||
+    !u ||
+    u.hp <= 0 ||
+    u.kind === 'invader'
+  )
+    return false;
+  s.heldUnitId = id;
+  u.dropTimer = 0;
+  u.path = [];
+  u.target = null;
+  u.state = 'In der Hand';
+  return true;
+}
+
+export function cancelGrab(s: GameState) {
+  const u = s.units.find((u) => u.id === s.heldUnitId);
+  if (u) {
+    // Coordinates stay at the pickup location until a valid drop is committed.
+    u.state = 'Abgesetzt';
+    u.path = [];
+    u.target = null;
+  }
+  s.heldUnitId = null;
+}
+
+export function canDropUnit(s: GameState, i: number) {
+  const t = s.tiles[i];
+  return !!t && t.seen && walkable(t);
+}
+
+export function slapUnit(s: GameState, id: number) {
+  const u = s.units.find((u) => u.id === id);
+  if (
+    s.status !== 'playing' ||
+    !u ||
+    u.kind === 'invader' ||
+    u.hp <= 0 ||
+    u.id === s.heldUnitId
+  )
+    return false;
+  u.hp = Math.max(1, u.hp - 3);
+  u.mood = Math.max(0, u.mood - 5);
+  u.energy = Math.min(100, u.energy + 4);
+  s.effects.push({ x: u.x, z: u.z, type: 'hit', life: 0.4 });
+  return true;
+}
+
 export function dropUnit(s: GameState, id: number, i: number) {
   const t = s.tiles[i],
     u = s.units.find((u) => u.id === id && u.kind !== 'invader');
-  if (!u || !t || !walkable(t) || !t.owned) return false;
+  if (!u || s.heldUnitId !== id || !canDropUnit(s, i)) return false;
+  s.heldUnitId = null;
   u.x = t.x;
   u.z = t.z;
   u.path = [];
   u.target = null;
   u.state = 'Abgesetzt';
+  u.dropTimer = 0.45;
   u.energy = Math.max(0, u.energy - 3);
   return true;
 }
@@ -780,6 +839,8 @@ function combat(s: GameState, u: Unit, dt: number): boolean {
   const foes = s.units.filter(
     (v) =>
       v.hp > 0 &&
+      v.id !== s.heldUnitId &&
+      v.dropTimer <= 0 &&
       (u.kind === 'invader' ? v.kind !== 'invader' : v.kind === 'invader'),
   );
   foes.sort(
@@ -899,7 +960,11 @@ export function tick(
   for (const t of s.tiles)
     if (t.trapCooldown > 0) t.trapCooldown = Math.max(0, t.trapCooldown - dt);
   for (const u of s.units) {
-    if (u.hp <= 0) continue;
+    if (u.hp <= 0 || u.id === s.heldUnitId) continue;
+    if (u.dropTimer > 0) {
+      u.dropTimer = Math.max(0, u.dropTimer - dt);
+      continue;
+    }
     u.cooldown -= dt;
     if (u.kind !== 'invader') {
       u.hunger = Math.max(0, u.hunger - dt * 0.25);
@@ -991,9 +1056,13 @@ export function tick(
       log(s, 'Leere Kassen. Deine Bewohner warten auf ihren Lohn.', 'warn');
     }
   }
-  const departed = creatures(s).filter((u) => u.mood <= 0);
+  const departed = creatures(s).filter(
+    (u) => u.mood <= 0 && u.id !== s.heldUnitId,
+  );
   if (departed.length) {
-    s.units = s.units.filter((u) => u.mood > 0 || u.kind === 'invader');
+    s.units = s.units.filter(
+      (u) => u.mood > 0 || u.kind === 'invader' || u.id === s.heldUnitId,
+    );
     log(s, 'Unzufriedene Bewohner haben dein Reich verlassen.', 'warn');
   }
   if (s.research >= 100 && !s.unlocked) {
@@ -1053,7 +1122,17 @@ export function tick(
 }
 export const SAVE_KEY = 'kluftkrone-save-v1';
 export function serialize(s: GameState) {
-  return JSON.stringify({ ...s, effects: [] });
+  // Pointer gestures are transient: a saved carried resident returns safely to its origin.
+  return JSON.stringify({
+    ...s,
+    heldUnitId: null,
+    effects: [],
+    units: s.units.map((u) => ({
+      ...u,
+      dropTimer: 0,
+      state: u.id === s.heldUnitId ? 'Abgesetzt' : u.state,
+    })),
+  });
 }
 export function deserialize(raw: string): GameState | null {
   try {
@@ -1225,7 +1304,10 @@ export function deserialize(raw: string): GameState | null {
     s.units.forEach((u: Unit) => {
       u.path = [];
       u.target = null;
+      u.dropTimer = 0;
+      if (u.id === s.heldUnitId) u.state = 'Abgesetzt';
     });
+    s.heldUnitId = null;
     s.effects = [];
     s.revision++;
     return s as GameState;

@@ -1917,6 +1917,16 @@ export function createCreatureModels(): CreatureModels {
         foreR.rotation.x += (-1.03 - foreR.rotation.x) * sleep;
         head.rotation.z += sleep * 0.16;
       }
+      if (job === 'In der Hand') {
+        armL.rotation.set(-2.55 + Math.sin(t * 9) * 0.22, 0, -0.25);
+        armR.rotation.set(-2.55 - Math.sin(t * 9) * 0.22, 0, 0.25);
+        foreL.rotation.x = foreR.rotation.x = -0.65;
+        legL.rotation.x = Math.sin(t * 8) * 0.3;
+        legR.rotation.x = -Math.sin(t * 8) * 0.3;
+        shinL.rotation.x = 0.2;
+        shinR.rotation.x = 0.2;
+        head.rotation.z += Math.sin(t * 4) * 0.08;
+      }
       if (cape) {
         cape.rotation.x =
           0.08 +

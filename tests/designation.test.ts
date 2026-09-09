@@ -17,7 +17,7 @@ import {
 } from '../app/construction';
 import { translate } from '../app/i18n';
 const quiet = () => {
-  const s = createGame();
+  const s = createGame(92841);
   s.nextWave = s.nextArrival = s.nextPayday = 1e6;
   return s;
 };
