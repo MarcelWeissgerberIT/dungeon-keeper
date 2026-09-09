@@ -48,3 +48,20 @@ test('translated React tree preserves callbacks, element keys and accessible lab
   );
   assert.equal(translateTree(original, 'de'), original);
 });
+test('translating static sibling elements does not introduce React key warnings', async () => {
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const original = createElement('section', null,
+    createElement('h2', null, 'Speichern'),
+    createElement('p', null, 'Dein Reich'),
+    [createElement('button', { key: 'grab' }, 'Greifen')],
+  );
+  const errors: unknown[][] = [];
+  const previous = console.error;
+  console.error = (...args: unknown[]) => { errors.push(args); };
+  try {
+    const markup = renderToStaticMarkup(translateTree(original, 'en'));
+    assert.match(markup, /Save/);
+    assert.match(markup, /Grab/);
+    assert.equal(errors.length, 0);
+  } finally { console.error = previous; }
+});

@@ -401,8 +401,12 @@ export function translateTree(node: ReactNode, locale: Locale): ReactNode {
   for (const key of ['title', 'aria-label', 'alt', 'placeholder'])
     if (typeof element.props[key] === 'string')
       props[key] = translate(element.props[key] as string, locale);
-  if (element.props.children !== undefined)
-    props.children = translateTree(element.props.children as ReactNode, locale);
+  if (element.props.children !== undefined) {
+    const children = translateTree(element.props.children as ReactNode, locale);
+    return Array.isArray(children)
+      ? cloneElement(element, props, ...children)
+      : cloneElement(element, props, children);
+  }
   return cloneElement(element, props);
 }
 export const translationCatalog = messages;
